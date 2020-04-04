@@ -1,0 +1,9 @@
+<emp_start>
+	<http>
+		<port>8080</port>
+	</http>
+	<context>
+		<path>/</path>
+		<war>./emp_home</war>
+	</context>
+</emp_start>
