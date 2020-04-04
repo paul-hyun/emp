@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.fault.event.Dao4EventIf">
+
+	<select id="queryNextEvent_id" resultType="long">
+		SELECT NEXTVAL('EMP_EVENT_ID_SEQ')
+	</select>
+
+	<insert id="createEvent" parameterType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Event">
+		INSERT INTO EMP_EVENT_${partition_index}
+			(
+				event_id,
+				ne_id,
+				ne_info_code,
+				ne_info_index,
+				location_display,
+				event_code,
+				severity,
+				gen_time,
+				gen_type,
+				description
+			)
+			VALUES (
+				#{model.event_id},
+				#{model.ne_id},
+				#{model.ne_info_code},
+				#{model.ne_info_index},
+				#{model.location_display},
+				#{model.event_code},
+				#{model.severity},
+				#{model.gen_time},
+				#{model.gen_type},
+				#{model.description}
+			)
+	</insert>
+
+	<select id="queryEvent" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Event">
+		SELECT
+			A.*
+		FROM
+			EMP_EVENT A
+		WHERE
+			A.event_id=#{event_id}
+	</select>
+
+	<select id="queryListEventByNeGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Event">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		),
+		YY(event_id) AS (
+			SELECT
+				XA.event_id
+			FROM
+				EMP_EVENT XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+				INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+			<where> 
+				<if test="fromTime != null and toTime != null">
+					XA.gen_time BETWEEN #{fromTime} AND #{toTime}
+				</if>
+				<if test="event_code != null">
+					AND XA.event_code=#{event_code}
+				</if>
+				<if test="severity != null">
+					AND XA.severity=#{severity}
+				</if>
+			</where>
+			ORDER BY
+				XA.event_id DESC
+			LIMIT #{count} OFFSET #{startNo}
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_EVENT A
+			INNER JOIN YY ON YY.event_id=A.event_id
+		ORDER BY
+			A.event_id DESC
+	</select>
+
+	<select id="queryListEventByNe" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Event">
+		WITH YY(event_id) AS (
+			SELECT
+				XA.event_id
+			FROM
+				EMP_EVENT XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+			WHERE
+				XA.ne_id=#{ne_id}
+			<if test="fromTime != null and toTime != null">
+				AND XA.gen_time BETWEEN #{fromTime} AND #{toTime}
+			</if>
+			<if test="event_code != null">
+				AND XA.event_code=#{event_code}
+			</if>
+			<if test="severity != null">
+				AND XA.severity=#{severity}
+			</if>
+			ORDER BY
+				XA.event_id DESC
+			LIMIT #{count} OFFSET #{startNo}
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_EVENT A
+			INNER JOIN YY ON YY.event_id=A.event_id
+		ORDER BY
+			A.event_id DESC
+	</select>
+
+	<select id="queryListEventByConsole" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Event">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		),
+		YY(event_id) AS (
+			SELECT
+				XA.event_id
+			FROM
+				EMP_EVENT XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+				INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+			ORDER BY
+				XA.event_id DESC
+			LIMIT #{count} OFFSET #{startNo}
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_EVENT A
+			INNER JOIN YY ON YY.event_id=A.event_id
+		ORDER BY
+			A.event_id DESC
+	</select>
+
+	<select id="queryCountEventByNeGroup" parameterType="java.util.Map" resultType="int">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		),
+		YY(event_id) AS (
+			SELECT
+				XA.event_id
+			FROM
+				EMP_EVENT XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+				INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+			<where> 
+				<if test="fromTime != null and toTime != null">
+					XA.gen_time BETWEEN #{fromTime} AND #{toTime}
+				</if>
+				<if test="event_code != null">
+					AND XA.event_code=#{event_code}
+				</if>
+				<if test="severity != null">
+					AND XA.severity=#{severity}
+				</if>
+			</where>
+		)
+		SELECT
+			COUNT(YY.event_id)
+		FROM
+			YY
+	</select>
+
+	<select id="queryCountEventByNe" parameterType="java.util.Map" resultType="int">
+		WITH YY(event_id) AS (
+			SELECT
+				XA.event_id
+			FROM
+				EMP_EVENT XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+			WHERE
+				XA.ne_id=#{ne_id}
+			<if test="fromTime != null and toTime != null">
+				AND XA.gen_time BETWEEN #{fromTime} AND #{toTime}
+			</if>
+			<if test="event_code != null">
+				AND XA.event_code=#{event_code}
+			</if>
+			<if test="severity != null">
+				AND XA.severity=#{severity}
+			</if>
+		)
+		SELECT
+			COUNT(YY.event_id)
+		FROM
+			YY
+	</select>
+
+	<select id="queryCurrUpdate_seq_fault" resultType="long">
+		SELECT last_value FROM EMP_UPDATE_SEQ_FAULT
+	</select>
+
+	<select id="queryNextUpdate_seq_fault" resultType="long">
+		SELECT NEXTVAL('EMP_UPDATE_SEQ_FAULT')
+	</select>
+
+	<select id="queryListPartition" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT
+			SUBSTRING(UPPER(child.relname) FROM CHAR_LENGTH('EMP_EVENT') + 2)
+		FROM
+			pg_inherits
+			JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
+			JOIN pg_class child ON pg_inherits.inhrelid = child.oid
+		WHERE
+			UPPER(parent.relname)=UPPER('EMP_EVENT')
+	</select>
+
+	<insert id="createPartition" parameterType="java.util.Map">
+		CREATE TABLE EMP_EVENT_${partition_index} (CHECK ('${fromTime}' &lt;= gen_time AND gen_time &lt; '${toTime}')) INHERITS (EMP_EVENT);
+		CREATE INDEX ik_event_${partition_index} ON EMP_EVENT_${partition_index} (event_id, ne_id, ne_info_code, ne_info_index, event_code, severity, gen_time);
+	</insert>
+
+	<insert id="dropPartition" parameterType="java.util.Map">
+		DROP TABLE EMP_EVENT_${partition_index} CASCADE
+	</insert>
+
+	<delete id="truncate" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_EVENT
+		RESTART IDENTITY
+	</delete>
+
+</mapper>

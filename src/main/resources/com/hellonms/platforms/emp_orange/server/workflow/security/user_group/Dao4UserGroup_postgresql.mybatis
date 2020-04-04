@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.security.user_group.Dao4UserGroupIf">
+
+	<insert id="createUserGroup" parameterType="com.hellonms.platforms.emp_orange.share.model.security.user_group.Model4UserGroup">
+		INSERT INTO EMP_USER_GROUP
+			(
+				delete_state,
+				user_group_account,
+				access,
+				description,
+				admin_state,
+				meta_data,
+				creator,
+				create_time,
+				updater,
+				update_time
+			)
+			VALUES (
+				false,
+				#{user_group_account},
+				#{access},
+				#{description},
+				#{admin_state},
+				#{meta_data},
+				#{creator},
+				CURRENT_TIMESTAMP,
+				#{creator},
+				CURRENT_TIMESTAMP
+			)
+	</insert>
+
+	<select id="queryCurrval_user_group_id" resultType="int">
+		SELECT CURRVAL(pg_get_serial_sequence('EMP_USER_GROUP', 'user_group_id'))
+	</select>
+
+	<select id="queryUserGroupByAccount" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.user_group.Model4UserGroup">
+		SELECT 
+			A.*
+		FROM
+			EMP_USER_GROUP A
+		WHERE
+			A.delete_state=false
+			AND A.user_group_account=#{user_group_account}
+	</select>
+
+	<select id="queryUserGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.user_group.Model4UserGroup">
+		SELECT 
+			A.*
+		FROM
+			EMP_USER_GROUP A
+		WHERE
+			A.delete_state=false
+			AND A.user_group_id=#{user_group_id}
+	</select>
+
+	<select id="queryListUserGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.user_group.Model4UserGroup">
+		SELECT 
+			A.*
+		FROM
+			EMP_USER_GROUP A
+		WHERE
+			A.delete_state=false
+		ORDER BY
+			A.user_group_id
+		LIMIT #{count} OFFSET #{startNo}
+	</select>
+
+	<select id="queryCountUserGroup" parameterType="java.util.Map" resultType="int">
+		SELECT 
+			COUNT(A.user_group_id)
+		FROM
+			EMP_USER_GROUP A
+		WHERE
+			A.delete_state=false
+	</select>
+
+	<update id="updateUserGroup" parameterType="com.hellonms.platforms.emp_orange.share.model.security.user_group.Model4UserGroup">
+		UPDATE 
+			EMP_USER_GROUP
+		SET
+			description=#{description},
+			admin_state=#{admin_state},
+			meta_data=#{meta_data},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND user_group_id=#{user_group_id}
+	</update>
+
+	<update id="deleteUserGroup" parameterType="java.util.Map">
+		UPDATE 
+			EMP_USER_GROUP
+		SET
+			delete_state=true,
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND user_group_id=#{user_group_id}
+	</update>
+
+	<!--							-->
+	<!--	USER_GROUP_AUTHORITY	-->
+	<!--							-->
+	<insert id="createListOperationAuthorities" parameterType="java.util.Map">
+		INSERT INTO EMP_USER_GROUP_AUTHORITY
+			(
+				user_group_id,
+				operation_code,
+				authority
+			)
+			VALUES
+		<foreach collection="operation_authority" item="item" separator=" , ">
+			(
+				#{user_group_id},
+				#{item.operation_code},
+				#{item.authority}
+			)
+		</foreach>
+	</insert>
+
+	<select id="queryListOperationAuthorities" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.security.user_group.Dao4UserGroup$OperationAuthority">
+		SELECT
+			*
+		FROM
+			EMP_USER_GROUP_AUTHORITY
+		WHERE
+			user_group_id=#{user_group_id}
+	</select>
+
+	<delete id="deleteListOperationAuthorities" parameterType="java.util.Map">
+		DELETE
+		FROM
+			EMP_USER_GROUP_AUTHORITY
+		WHERE
+			user_group_id=#{user_group_id}
+	</delete>
+
+</mapper>

@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.network.ne_info.Dao4NeInfoIf">
+
+	<!--							-->
+	<!--		VALUE				-->
+	<!--							-->
+	<insert id="createListNeInfo" parameterType="java.util.Map">
+		INSERT INTO EMP_NE_INFO_VALUE
+			VALUES
+		<foreach collection="row_list" item="item" separator=", ">
+			(
+				#{item.ne_id},
+				#{item.ne_info_code},
+				#{item.ne_info_index},
+				#{item.collect_time},
+				#{item.ne_info_value}
+			)
+		</foreach>
+		ON CONFLICT (ne_id, ne_info_code, ne_info_index)
+		DO UPDATE SET collect_time=EXCLUDED.collect_time, ne_info_value=EXCLUDED.ne_info_value
+	</insert>
+
+	<update id="updateListNeInfo" parameterType="java.util.Map">
+		UPDATE
+			EMP_NE_INFO_VALUE A
+		SET
+			collect_time = B.collect_time,
+			ne_info_value = B.ne_info_value
+		FROM (
+				VALUES
+				<foreach collection="row_list" item="item" separator=" , ">
+					(
+						#{item.ne_id},
+						#{item.ne_info_code},
+						#{item.ne_info_index},
+						TO_TIMESTAMP(#{item.collect_time.time}::DOUBLE PRECISION / 1000),
+						#{item.ne_info_value}
+					)
+				</foreach>
+			) AS B (
+				ne_id,
+				ne_info_code,
+				ne_info_index,
+				collect_time,
+				ne_info_value
+			)
+		WHERE
+			A.ne_id=B.ne_id
+			AND A.ne_info_code=B.ne_info_code
+			AND A.ne_info_index=B.ne_info_index
+	</update>
+
+	<delete id="deleteListNeInfo" parameterType="java.util.Map">
+		DELETE FROM
+			EMP_NE_INFO_VALUE A
+			USING (
+				VALUES
+				<foreach collection="row_list" item="item" separator=" , ">
+					(
+						#{item.ne_id},
+						#{item.ne_info_code},
+						#{item.ne_info_index}
+					)
+				</foreach>
+			) AS B (ne_id, ne_info_code, ne_info_index)
+		WHERE
+			A.ne_id=B.ne_id
+			AND A.ne_info_code=B.ne_info_code
+			AND A.ne_info_index=B.ne_info_index
+	</delete>
+
+	<select id="queryNeInfo" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.network.ne_info.Dao4NeInfo$NeInfoValue4iBATIS">
+		SELECT
+			A.*
+		FROM
+			EMP_NE_INFO_VALUE A
+		WHERE
+			A.ne_id=#{ne_id}
+			AND A.ne_info_code=#{ne_info_code}
+			AND A.ne_info_index=#{ne_info_index}
+		ORDER BY
+			A.ne_id,
+			A.ne_info_code,
+			A.ne_info_index
+	</select>
+
+	<select id="queryAllNeInfo" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.network.ne_info.Dao4NeInfo$NeInfoValue4iBATIS">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_NE_INFO_VALUE A
+			INNER JOIN EMP_NE YA ON A.ne_id=YA.ne_id AND YA.delete_state=false
+			INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+		WHERE
+			A.ne_info_code=#{ne_info_code}
+		ORDER BY
+			A.ne_id,
+			A.ne_info_code,
+			A.ne_info_index
+	</select>
+
+	<select id="queryListNeInfo" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.network.ne_info.Dao4NeInfo$NeInfoValue4iBATIS">
+		SELECT
+			A.*
+		FROM
+			EMP_NE_INFO_VALUE A
+		WHERE
+			A.ne_info_code=#{ne_info_code}
+			AND A.ne_id=#{ne_id}
+			<if test="ne_info_index != null">
+				AND A.ne_info_index=#{ne_info_index}
+			</if>
+		ORDER BY
+			A.ne_id,
+			A.ne_info_code,
+			A.ne_info_index
+	</select>
+
+	<delete id="truncateNeInfoValue" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_NE_INFO_VALUE
+		RESTART IDENTITY
+	</delete>
+
+	<!--							-->
+	<!--	NE_INFO_INDEX			-->
+	<!--							-->
+	<insert id="createNeInfoIndex" parameterType="java.util.Map">
+		INSERT INTO EMP_NE_INFO_INDEX
+			(
+				ne_info_field_values
+			)
+			VALUES
+			(
+				#{ne_info_field_values}
+			)
+	</insert>
+
+	<select id="queryNeInfoIndex" parameterType="java.util.Map" resultType="hashmap">
+		SELECT
+			*
+		FROM
+			EMP_NE_INFO_INDEX
+		WHERE
+			ne_info_field_values=#{ne_info_field_values}
+	</select>
+
+	<select id="queryNeInfoIndexByCode" parameterType="java.util.Map" resultType="hashmap">
+		SELECT
+			*
+		FROM
+			EMP_NE_INFO_INDEX
+		WHERE
+			ne_info_index=#{ne_info_index}
+	</select>
+
+	<delete id="truncateNeInfoIndex" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_NE_INFO_INDEX
+		RESTART IDENTITY
+	</delete>
+
+</mapper>

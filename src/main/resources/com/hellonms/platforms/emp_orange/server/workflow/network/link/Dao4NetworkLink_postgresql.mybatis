@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.network.link.Dao4NetworkLinkIf">
+
+	<insert id="createNetworkLink" parameterType="com.hellonms.platforms.emp_orange.share.model.network.link.Model4NetworkLink">
+		INSERT INTO EMP_NETWORK_LINK
+			(
+				ne_group_id_from,
+				ne_id_from,
+				ne_group_id_to,
+				ne_id_to,
+				meta_data,
+				creator,
+				create_time,
+				updater,
+				update_time
+			)
+			VALUES (
+				#{ne_group_id_from},
+				#{ne_id_from},
+				#{ne_group_id_to},
+				#{ne_id_to},
+				#{meta_data},
+				#{creator},
+				CURRENT_TIMESTAMP,
+				#{creator},
+				CURRENT_TIMESTAMP
+			)
+	</insert>
+
+	<select id="queryCurrval_network_link_id" resultType="int">
+		SELECT CURRVAL(pg_get_serial_sequence('EMP_NETWORK_LINK', 'network_link_id'))
+	</select>
+
+	<select id="queryNetworkLink" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.link.Model4NetworkLink">
+		SELECT 
+			YA.*
+		FROM
+			EMP_NETWORK_LINK YA
+		<where>
+			 <if test="network_link_id != null">
+				YA.network_link_id=#{network_link_id}
+			 </if>
+			 <if test="ne_group_id_from != null">
+				AND YA.ne_group_id_from=#{ne_group_id_from}
+			 </if>
+			 <if test="ne_id_from != null">
+				AND YA.ne_id_from=#{ne_id_from}
+			 </if>
+			 <if test="ne_group_id_to != null">
+				AND YA.ne_group_id_to=#{ne_group_id_to}
+			 </if>
+			 <if test="ne_id_to != null">
+				AND YA.ne_id_to=#{ne_id_to}
+			 </if>
+		</where>
+	</select>
+
+	<select id="queryListNetworkLink" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.link.Model4NetworkLink">
+		SELECT
+			YA.*
+		FROM
+			EMP_NETWORK_LINK YA
+		ORDER BY
+			YA.ne_group_id_from,
+			YA.ne_id_from,
+			YA.ne_group_id_to,
+			YA.ne_id_to
+		LIMIT #{count} OFFSET #{startNo}
+	</select>
+
+	<update id="deleteNetworkLink" parameterType="java.util.Map">
+		DELETE FROM 
+			EMP_NETWORK_LINK
+		WHERE
+			network_link_id=#{network_link_id}
+	</update>
+
+	<select id="queryCurrUpdate_seq_network" resultType="long">
+		SELECT last_value FROM EMP_UPDATE_SEQ_NETWORK
+	</select>
+
+	<select id="queryNextUpdate_seq_network" resultType="long">
+		SELECT NEXTVAL('EMP_UPDATE_SEQ_NETWORK')
+	</select>
+
+	<delete id="truncate" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_NETWORK_LINK
+		RESTART IDENTITY
+	</delete>
+
+</mapper>

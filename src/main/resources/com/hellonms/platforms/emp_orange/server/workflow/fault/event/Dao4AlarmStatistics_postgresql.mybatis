@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.fault.event.Dao4AlarmStatisticsIf">
+
+	<insert id="createListAlarmStatistics" parameterType="java.util.Map">
+		INSERT INTO EMP_ALARM_STATISTICS_${partition_type}_${partition_index}
+			VALUES
+		<foreach collection="row_list" item="item" separator=",">
+			(
+				#{item.ne_id},
+				#{item.event_code},
+				#{item.severity},
+				#{item.alarm_count},
+				#{item.collect_time},
+				#{item.rop_num}
+			)
+		</foreach>
+		ON CONFLICT (ne_id, event_code, severity, collect_time)
+		DO UPDATE SET alarm_count=EXCLUDED.alarm_count, rop_num=EXCLUDED.rop_num
+	</insert>
+
+	<select id="queryListAlarm" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		SELECT
+			A.*
+		FROM
+			EMP_ALARM_${partition_index} A
+			INNER JOIN EMP_NE C ON A.ne_id=C.ne_id AND C.delete_state=false
+		WHERE
+			A.gen_first_time BETWEEN #{fromTime} AND #{toTime}
+	</select>
+
+	<select id="queryListAlarmStatistics" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.fault.event.Dao4AlarmStatistics$AlarmStatisticsValue">
+		SELECT
+			A.*
+		FROM
+			EMP_ALARM_STATISTICS_${partition_type}_${partition_index} A
+			INNER JOIN EMP_NE C ON A.ne_id=C.ne_id AND C.delete_state=false
+		WHERE
+			A.collect_time BETWEEN #{fromTime} AND #{toTime}
+	</select>
+
+	<select id="queryListAlarmStatisticsByNeGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.fault.event.Dao4AlarmStatistics$AlarmStatisticsValue">
+		WITH ZZ(ne_group_id, ne_group_name) AS (
+			SELECT
+				ZA.ne_group_id, ZA.ne_group_name
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		)
+		SELECT
+			A.collect_time,
+		<if test="item.name() == 'CAUSE'">
+			A.event_code,
+		</if>
+		<if test="item.name() == 'SEVERITY'">
+			A.severity,
+		</if>
+			SUM(A.alarm_count) AS alarm_count
+		FROM
+			EMP_ALARM_STATISTICS_${partition_type} A
+			INNER JOIN EMP_NE C ON A.ne_id=C.ne_id AND C.delete_state=false
+			INNER JOIN ZZ ON C.ne_group_id=ZZ.ne_group_id
+		WHERE
+			A.collect_time BETWEEN #{fromTime} AND #{toTime}
+		GROUP BY
+			A.collect_time,
+		<if test="item.name() == 'CAUSE'">
+			A.event_code
+		</if>
+		<if test="item.name() == 'SEVERITY'">
+			A.severity
+		</if>
+	</select>
+
+	<select id="queryListAlarmStatisticsByNe" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.fault.event.Dao4AlarmStatistics$AlarmStatisticsValue">
+		SELECT
+			A.collect_time,
+		<if test="item.name() == 'CAUSE'">
+			A.event_code,
+		</if>
+		<if test="item.name() == 'SEVERITY'">
+			A.severity,
+		</if>
+			SUM(A.alarm_count) AS alarm_count
+		FROM
+			EMP_ALARM_STATISTICS_${partition_type} A
+			INNER JOIN EMP_NE C ON A.ne_id=C.ne_id AND C.delete_state=false
+		WHERE
+			A.ne_id=#{ne_id}
+			AND A.collect_time BETWEEN #{fromTime} AND #{toTime}
+		GROUP BY
+			collect_time,
+		<if test="item.name() == 'CAUSE'">
+			A.event_code
+		</if>
+		<if test="item.name() == 'SEVERITY'">
+			A.severity
+		</if>
+	</select>
+
+	<select id="queryListPartition" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT
+			SUBSTRING(UPPER(child.relname) FROM CHAR_LENGTH('EMP_ALARM_STATISTICS_${partition_type}') + 2)
+		FROM
+			pg_inherits
+			JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
+			JOIN pg_class child ON pg_inherits.inhrelid = child.oid
+		WHERE
+			UPPER(parent.relname)=UPPER('EMP_ALARM_STATISTICS_${partition_type}')
+	</select>
+
+	<insert id="createPartition" parameterType="java.util.Map">
+		CREATE TABLE EMP_ALARM_STATISTICS_${partition_type}_${partition_index} (CHECK ('${fromTime}' &lt;= collect_time AND collect_time &lt; '${toTime}')) INHERITS (EMP_ALARM_STATISTICS_${partition_type});
+		CREATE UNIQUE INDEX uk_alarm_statistics_${partition_type}_${partition_index} ON EMP_ALARM_STATISTICS_${partition_type}_${partition_index} (ne_id, event_code, severity, collect_time);
+	</insert>
+
+	<insert id="dropPartition" parameterType="java.util.Map">
+		DROP TABLE EMP_ALARM_STATISTICS_${partition_type}_${partition_index} CASCADE
+	</insert>
+
+	<delete id="truncate" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_ALARM_STATISTICS_${partition_type}
+		RESTART IDENTITY
+	</delete>
+
+</mapper>

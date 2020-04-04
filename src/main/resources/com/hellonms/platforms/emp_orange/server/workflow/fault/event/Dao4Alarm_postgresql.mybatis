@@ -1,0 +1,561 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.fault.event.Dao4AlarmIf">
+	<insert id="createAlarm" parameterType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		INSERT INTO EMP_ALARM_${partition_index}
+			(
+				gen_first_event_id,
+				gen_last_event_id,
+				clear_event_id,
+				ne_id,
+				ne_info_code,
+				ne_info_index,
+				location_display,
+				event_code,
+				severity,
+				gen_count,
+				gen_first_time,
+				gen_last_time,
+				gen_type,
+				gen_description,
+				clear_state,
+				clear_time,
+				clear_type,
+				clear_description,
+				ack_state,
+				ack_time,
+				ack_user,
+				annotation_count
+			)
+			VALUES (
+				#{model.gen_first_event_id},
+				#{model.gen_last_event_id},
+				#{model.clear_event_id},
+				#{model.ne_id},
+				#{model.ne_info_code},
+				#{model.ne_info_index},
+				#{model.location_display},
+				#{model.event_code},
+				#{model.severity},
+				#{model.gen_count},
+				#{model.gen_first_time},
+				#{model.gen_last_time},
+				#{model.gen_type},
+				#{model.gen_description},
+				#{model.clear_state},
+				#{model.clear_time},
+				#{model.clear_type},
+				#{model.clear_description},
+				#{model.ack_state},
+				#{model.ack_time},
+				#{model.ack_user},
+				0
+			)
+	</insert>
+
+	<select id="queryAlarm" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		SELECT
+			A.*
+		FROM
+			EMP_ALARM A
+		WHERE
+			A.gen_first_event_id=#{gen_first_event_id}
+	</select>
+
+	<select id="queryListAlarmByNeGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		),
+		YY(gen_first_event_id) AS (
+			SELECT
+				XA.gen_first_event_id
+			FROM
+				EMP_ALARM XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+				INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+			<where> 
+				<if test="fromTime != null and toTime != null">
+					XA.gen_first_time BETWEEN #{fromTime} AND #{toTime}
+				</if>
+				<if test="event_code != null">
+					AND XA.event_code=#{event_code}
+				</if>
+				<if test="severity != null">
+					AND XA.severity=#{severity}
+				</if>
+			</where>
+			ORDER BY
+				XA.gen_first_event_id DESC
+			LIMIT #{count} OFFSET #{startNo}
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_ALARM A
+			INNER JOIN YY ON YY.gen_first_event_id=A.gen_first_event_id
+		ORDER BY
+			A.gen_first_event_id DESC
+	</select>
+
+	<select id="queryListAlarmByNe" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		WITH YY(gen_first_event_id) AS (
+			SELECT
+				XA.gen_first_event_id
+			FROM
+				EMP_ALARM XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+			WHERE
+				XA.ne_id=#{ne_id}
+			<if test="fromTime != null and toTime != null">
+				AND XA.gen_first_time BETWEEN #{fromTime} AND #{toTime}
+			</if>
+			<if test="event_code != null">
+				AND XA.event_code=#{event_code}
+			</if>
+			<if test="severity != null">
+				AND XA.severity=#{severity}
+			</if>
+			ORDER BY
+				XA.gen_first_event_id DESC
+			LIMIT #{count} OFFSET #{startNo}
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_ALARM A
+			INNER JOIN YY ON YY.gen_first_event_id=A.gen_first_event_id
+		ORDER BY
+			A.gen_first_event_id DESC
+	</select>
+
+	<select id="queryListAlarmByConsole" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		),
+		YY(gen_first_event_id) AS (
+			SELECT
+				XA.gen_first_event_id
+			FROM
+				EMP_ALARM XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+				INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+			ORDER BY
+				XA.gen_first_event_id DESC
+			LIMIT #{count} OFFSET #{startNo}
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_ALARM A
+			INNER JOIN YY ON YY.gen_first_event_id=A.gen_first_event_id
+		ORDER BY
+			A.gen_first_event_id DESC
+	</select>
+
+	<select id="queryCountAlarmByNeGroup" parameterType="java.util.Map" resultType="int">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		),
+		YY(gen_first_event_id) AS (
+			SELECT
+				XA.gen_first_event_id
+			FROM
+				EMP_ALARM XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+				INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+			<where> 
+				<if test="fromTime != null and toTime != null">
+					XA.gen_first_time BETWEEN #{fromTime} AND #{toTime}
+				</if>
+				<if test="event_code != null">
+					AND XA.event_code=#{event_code}
+				</if>
+				<if test="severity != null">
+					AND XA.severity=#{severity}
+				</if>
+			</where>
+		)
+		SELECT
+			COUNT(YY.gen_first_event_id)
+		FROM
+			YY
+	</select>
+
+	<select id="queryCountAlarmByNe" parameterType="java.util.Map" resultType="int">
+		WITH YY(gen_first_event_id) AS (
+			SELECT
+				XA.gen_first_event_id
+			FROM
+				EMP_ALARM XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+			WHERE
+				XA.ne_id=#{ne_id}
+			<if test="fromTime != null and toTime != null">
+				AND XA.gen_first_time BETWEEN #{fromTime} AND #{toTime}
+			</if>
+			<if test="event_code != null">
+				AND XA.event_code=#{event_code}
+			</if>
+			<if test="severity != null">
+				AND XA.severity=#{severity}
+			</if>
+		)
+		SELECT
+			COUNT(YY.gen_first_event_id)
+		FROM
+			YY
+	</select>
+
+	<update id="updateAlarmByAck" parameterType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		UPDATE 
+			EMP_ALARM
+		SET
+			ack_state=#{ack_state},
+			ack_time=#{ack_time},
+			ack_user=#{ack_user}
+		WHERE
+			gen_first_event_id=#{gen_first_event_id}
+	</update>
+
+	<update id="updateAlarmByClear" parameterType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		UPDATE 
+			EMP_ALARM
+		SET
+			clear_event_id=#{clear_event_id},
+			clear_state=#{clear_state},
+			clear_time=#{clear_time},
+			clear_type=#{clear_type},
+			clear_description=#{clear_description}
+		WHERE
+			gen_first_event_id=#{gen_first_event_id}
+	</update>
+
+	<update id="updateAlarmByRepetition" parameterType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		UPDATE 
+			EMP_ALARM
+		SET
+			gen_last_event_id=#{gen_last_event_id},
+			gen_count=#{gen_count},
+			gen_last_time=#{gen_last_time}
+		WHERE
+			gen_first_event_id=#{gen_first_event_id}
+	</update>
+
+	<select id="queryListPartition" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT
+			SUBSTRING(UPPER(child.relname) FROM CHAR_LENGTH('EMP_ALARM') + 2)
+		FROM
+			pg_inherits
+			JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
+			JOIN pg_class child ON pg_inherits.inhrelid = child.oid
+		WHERE
+			UPPER(parent.relname)=UPPER('EMP_ALARM')
+	</select>
+
+	<insert id="createPartition" parameterType="java.util.Map">
+		CREATE TABLE EMP_ALARM_${partition_index} (CHECK ('${fromTime}' &lt;= gen_first_time AND gen_first_time &lt; '${toTime}')) INHERITS (EMP_ALARM);
+		CREATE INDEX ik_alarm_${partition_index} ON EMP_ALARM_${partition_index} (ne_id, ne_info_code, ne_info_index, event_code, severity, gen_first_time);
+		CREATE INDEX ik_alarm_event_id_${partition_index} ON EMP_ALARM_${partition_index} (gen_first_event_id, gen_last_event_id, clear_event_id, ne_id);
+	</insert>
+
+	<insert id="dropPartition" parameterType="java.util.Map">
+		DROP TABLE EMP_ALARM_${partition_index} CASCADE
+	</insert>
+
+	<delete id="truncateAlarm" parameterType="java.util.Map">
+		TRUNCATE 
+			EMP_ALARM
+		RESTART IDENTITY
+	</delete>
+
+	<!--							-->
+	<!--		ALARM_ACTIVE		-->
+	<!--							-->
+	<insert id="createAlarmActive" parameterType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		INSERT INTO EMP_ALARM_ACTIVE
+			(
+				gen_first_event_id,
+				gen_last_event_id,
+				ne_id,
+				ne_info_code,
+				ne_info_index,
+				location_display,
+				event_code,
+				severity,
+				gen_count,
+				gen_first_time,
+				gen_last_time,
+				gen_type,
+				gen_description,
+				ack_state,
+				ack_time,
+				ack_user,
+				annotation_count
+			)
+			VALUES (
+				#{model.gen_first_event_id},
+				#{model.gen_last_event_id},
+				#{model.ne_id},
+				#{model.ne_info_code},
+				#{model.ne_info_index},
+				#{model.location_display},
+				#{model.event_code},
+				#{model.severity},
+				#{model.gen_count},
+				#{model.gen_first_time},
+				#{model.gen_last_time},
+				#{model.gen_type},
+				#{model.gen_description},
+				#{model.ack_state},
+				#{model.ack_time},
+				#{model.ack_user},
+				0
+			)
+	</insert>
+
+	<select id="queryAlarmActive" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		SELECT 
+			A.*
+		FROM
+			EMP_ALARM_ACTIVE A
+		WHERE
+		<choose>
+			<when test="gen_first_event_id != null">
+				A.gen_first_event_id=#{gen_first_event_id}
+			</when>
+			<otherwise>
+				A.ne_id=#{ne_id}
+				AND A.ne_info_code=#{ne_info_code}
+				AND A.ne_info_index=#{ne_info_index}
+				AND A.event_code=#{event_code}
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="queryListAlarmActiveByNeGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		),
+		YY(gen_first_event_id) AS (
+			SELECT
+				XA.gen_first_event_id
+			FROM
+				EMP_ALARM_ACTIVE XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+				INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+			<where> 
+				<if test="ne_info_code != null">
+					AND XA.ne_info_code=#{ne_info_code}
+				</if>
+				<if test="event_code != null">
+					AND XA.event_code=#{event_code}
+				</if>
+				<if test="severity != null">
+					AND XA.severity=#{severity}
+				</if>
+			</where>
+			ORDER BY
+				XA.gen_first_event_id DESC
+			LIMIT #{count} OFFSET #{startNo}
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_ALARM_ACTIVE A
+			INNER JOIN YY ON YY.gen_first_event_id=A.gen_first_event_id
+		ORDER BY
+			A.gen_first_event_id DESC
+	</select>
+
+	<select id="queryListAlarmActiveByNe" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		WITH YY(gen_first_event_id) AS (
+			SELECT
+				XA.gen_first_event_id
+			FROM
+				EMP_ALARM_ACTIVE XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+			WHERE
+				XA.ne_id=#{ne_id}
+			<if test="fromTime != null and toTime != null">
+				AND XA.gen_first_time BETWEEN #{fromTime} AND #{toTime}
+			</if>
+			<if test="event_code != null">
+				AND XA.event_code=#{event_code}
+			</if>
+			<if test="severity != null">
+				AND XA.severity=#{severity}
+			</if>
+			ORDER BY
+				XA.gen_first_event_id DESC
+			LIMIT #{count} OFFSET #{startNo}
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_ALARM_ACTIVE A
+			INNER JOIN YY ON YY.gen_first_event_id=A.gen_first_event_id
+		ORDER BY
+			A.gen_first_event_id DESC
+	</select>
+
+	<select id="queryListAlarmActiveBySummary" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		SELECT
+			A.*
+		FROM
+			EMP_ALARM_ACTIVE A
+			INNER JOIN EMP_NE B ON A.ne_id=B.ne_id AND B.delete_state=false
+	</select>
+
+	<select id="queryCountAlarmActiveByNeGroup" parameterType="java.util.Map" resultType="int">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		),
+		YY(gen_first_event_id) AS (
+			SELECT
+				XA.gen_first_event_id
+			FROM
+				EMP_ALARM_ACTIVE XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+				INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+			<where> 
+				<if test="event_code != null">
+					AND XA.event_code=#{event_code}
+				</if>
+				<if test="severity != null">
+					AND XA.severity=#{severity}
+				</if>
+			</where>
+		)
+		SELECT
+			COUNT(YY.gen_first_event_id)
+		FROM
+			YY
+	</select>
+
+	<select id="queryCountAlarmActiveByNe" parameterType="java.util.Map" resultType="int">
+		WITH YY(gen_first_event_id) AS (
+			SELECT
+				XA.gen_first_event_id
+			FROM
+				EMP_ALARM_ACTIVE XA
+				INNER JOIN EMP_NE YA ON XA.ne_id=YA.ne_id AND YA.delete_state=false
+			WHERE
+				XA.ne_id=#{ne_id}
+			<if test="fromTime != null and toTime != null">
+				AND XA.gen_first_time BETWEEN #{fromTime} AND #{toTime}
+			</if>
+			<if test="event_code != null">
+				AND XA.event_code=#{event_code}
+			</if>
+			<if test="severity != null">
+				AND XA.severity=#{severity}
+			</if>
+		)
+		SELECT
+			COUNT(YY.gen_first_event_id)
+		FROM
+			YY
+	</select>
+
+	<update id="updateAlarmActiveByAck" parameterType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		UPDATE 
+			EMP_ALARM_ACTIVE
+		SET
+			ack_state=#{ack_state},
+			ack_time=#{ack_time},
+			ack_user=#{ack_user}
+		WHERE
+			gen_first_event_id=#{gen_first_event_id}
+	</update>
+
+	<update id="updateAlarmActiveByRepetition" parameterType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		UPDATE 
+			EMP_ALARM_ACTIVE
+		SET
+			gen_last_event_id=#{gen_last_event_id},
+			gen_count=#{gen_count},
+			gen_last_time=#{gen_last_time}
+		WHERE
+			gen_first_event_id=#{gen_first_event_id}
+	</update>
+
+	<delete id="deleteAlarmActive" parameterType="com.hellonms.platforms.emp_orange.share.model.fault.event.Model4Alarm">
+		DELETE FROM 
+			EMP_ALARM_ACTIVE
+		WHERE
+			ne_id=#{ne_id}
+			AND ne_info_code=#{ne_info_code}
+			AND ne_info_index=#{ne_info_index}
+			AND event_code=#{event_code}
+	</delete>
+
+	<delete id="truncateAlarmActive" parameterType="java.util.Map">
+		TRUNCATE 
+			EMP_ALARM_ACTIVE
+		RESTART IDENTITY
+	</delete>
+
+</mapper>

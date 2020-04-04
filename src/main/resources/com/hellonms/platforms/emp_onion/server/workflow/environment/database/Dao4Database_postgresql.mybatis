@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_onion.server.workflow.environment.database.Dao4DatabaseIf">
+
+	<delete id="deleteListDatabaseGarbageByPrimary_key" parameterType="java.util.Map">
+		DELETE
+		FROM
+			${table_primary_name} A
+		WHERE
+			A.${field_name}=#{field_value}
+			AND #{garbage_offset_sec} &lt; EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - A.update_time))
+	</delete>
+
+	<delete id="deleteListDatabaseGarbageByForegin_key" parameterType="java.util.Map">
+		DELETE
+		FROM
+			${table_foregin_name}
+		WHERE
+			${table_primary_key} NOT IN (SELECT ${table_primary_key} FROM ${table_primary_name})
+	</delete>
+
+</mapper>

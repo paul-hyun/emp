@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.network.ne.Dao4NeIf">
+
+	<insert id="createNe" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne.Model4Ne">
+		INSERT INTO EMP_NE
+			(
+				delete_state,
+				ne_group_id,
+				ne_code,
+				ne_name,
+				access,
+				description,
+				ne_icon,
+				ne_map_location_x,
+				ne_map_location_y,
+				monitoring_timestamp,
+				admin_state,
+				meta_data,
+				creator,
+				create_time,
+				updater,
+				update_time
+			)
+			VALUES (
+				false,
+				#{ne_group_id},
+				#{ne_code},
+				#{ne_name},
+				#{access},
+				#{description},
+				#{ne_icon},
+				#{ne_map_location_x},
+				#{ne_map_location_y},
+				#{monitoring_timestamp},
+				#{admin_state},
+				#{meta_data},
+				#{creator},
+				CURRENT_TIMESTAMP,
+				#{creator},
+				CURRENT_TIMESTAMP
+			)
+	</insert>
+
+	<select id="queryCurrval_ne_id" resultType="int">
+		SELECT CURRVAL(pg_get_serial_sequence('EMP_NE', 'ne_id'))
+	</select>
+
+	<select id="queryNeByName" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne.Model4Ne">
+		SELECT 
+			YA.*, ZZ.ne_group_name
+		FROM
+			EMP_NE YA
+			INNER JOIN EMP_NE_GROUP ZZ ON YA.ne_group_id=ZZ.ne_group_id
+		WHERE
+			ZZ.delete_state=false
+			AND YA.delete_state=false
+			AND YA.ne_group_id=#{ne_group_id}
+			AND YA.ne_name=#{ne_name}
+	</select>
+
+	<select id="queryNe" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne.Model4Ne">
+		SELECT 
+			YA.*, ZZ.ne_group_name
+		FROM
+			EMP_NE YA
+			INNER JOIN EMP_NE_GROUP ZZ ON YA.ne_group_id=ZZ.ne_group_id
+		WHERE
+			ZZ.delete_state=false
+			AND YA.delete_state=false
+			AND YA.ne_id=#{ne_id}
+	</select>
+
+	<select id="queryListNe" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne.Model4Ne">
+		WITH ZZ(ne_group_id, ne_group_name) AS (
+			SELECT
+				ZA.ne_group_id, ZA.ne_group_name
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		)
+		SELECT
+			YA.*, ZZ.ne_group_name
+		FROM
+			EMP_NE YA
+			INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+		WHERE
+			YA.delete_state=false
+		<if test="ne_code != null">
+			AND YA.ne_code=#{ne_code}
+		</if>
+		ORDER BY
+			YA.ne_id
+		LIMIT #{count} OFFSET #{startNo}
+	</select>
+
+	<select id="queryCountNe" parameterType="java.util.Map" resultType="int">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		)
+		SELECT
+			COUNT(YA.ne_id)
+		FROM
+			EMP_NE YA
+			INNER JOIN ZZ ON YA.ne_group_id=ZZ.ne_group_id
+		WHERE
+			YA.delete_state=false
+		<if test="ne_code != null">
+			AND YA.ne_code=#{ne_code}
+		</if>
+	</select>
+
+	<update id="updateNe" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne.Model4Ne">
+		UPDATE 
+			EMP_NE
+		SET
+			ne_code=#{ne_code},
+			ne_name=#{ne_name},
+			description=#{description},
+			ne_icon=#{ne_icon},
+			admin_state=#{admin_state},
+			meta_data=#{meta_data},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_id=#{ne_id}
+	</update>
+
+	<update id="updateNeMapLocation" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne.Model4Ne">
+		UPDATE 
+			EMP_NE
+		SET
+			ne_map_location_x=#{ne_map_location_x},
+			ne_map_location_y=#{ne_map_location_y},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_id=#{ne_id}
+	</update>
+
+	<update id="updateNeMonitoringTimestamp" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne.Model4Ne">
+		UPDATE 
+			EMP_NE
+		SET
+			monitoring_timestamp=CURRENT_TIMESTAMP,
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_id=#{ne_id}
+	</update>
+
+	<update id="moveNe" parameterType="java.util.Map">
+		UPDATE
+			EMP_NE
+		SET
+			ne_group_id=#{ne_group_id},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_id=#{ne_id}
+	</update>
+
+	<update id="deleteNe" parameterType="java.util.Map">
+		UPDATE 
+			EMP_NE
+		SET
+			delete_state=true,
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_id=#{ne_id}
+	</update>
+
+	<select id="queryCurrUpdate_seq_network" resultType="long">
+		SELECT last_value FROM EMP_UPDATE_SEQ_NETWORK
+	</select>
+
+	<select id="queryNextUpdate_seq_network" resultType="long">
+		SELECT NEXTVAL('EMP_UPDATE_SEQ_NETWORK')
+	</select>
+
+	<delete id="truncate" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_NE
+		RESTART IDENTITY
+	</delete>
+
+	<delete id="init_nms" parameterType="java.util.Map">
+		INSERT INTO EMP_NE (delete_state, ne_group_id, ne_code, ne_name, access, description, ne_icon, ne_map_location_x, ne_map_location_y, monitoring_timestamp, admin_state, meta_data, creator, create_time, updater, update_time) VALUES (false, 1, CAST(x'0900' AS int), 'NMS', 1, '', '/data/image/node_icon/NMS.png', 0, 0, CURRENT_TIMESTAMP, true, null, 'EMP', CURRENT_TIMESTAMP, 'EMP', CURRENT_TIMESTAMP)
+	</delete>
+
+</mapper>

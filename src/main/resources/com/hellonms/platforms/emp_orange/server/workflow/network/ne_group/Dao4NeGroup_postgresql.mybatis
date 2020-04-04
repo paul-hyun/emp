@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.network.ne_group.Dao4NeGroupIf">
+
+	<insert id="createNeGroup" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne_group.Model4NeGroup">
+		INSERT INTO EMP_NE_GROUP
+			(
+				delete_state,
+				left_bound,
+				right_bound,
+				parent_ne_group_id,
+				ne_group_name,
+				access,
+				description,
+				ne_group_icon,
+				ne_group_map_bg_color,
+				ne_group_map_bg_image,
+				ne_group_map_location_x,
+				ne_group_map_location_y,
+				admin_state,
+				meta_data,
+				creator,
+				create_time,
+				updater,
+				update_time
+			)
+			VALUES (
+				false,
+				#{left_bound},
+				#{right_bound},
+				#{parent_ne_group_id},
+				#{ne_group_name},
+				#{access},
+				#{description},
+				#{ne_group_icon},
+				#{ne_group_map_bg_color},
+				#{ne_group_map_bg_image},
+				#{ne_group_map_location_x},
+				#{ne_group_map_location_y},
+				#{admin_state},
+				#{meta_data},
+				#{creator},
+				CURRENT_TIMESTAMP,
+				#{creator},
+				CURRENT_TIMESTAMP
+			)
+	</insert>
+
+	<select id="queryCurrval_ne_group_id" resultType="int">
+		SELECT CURRVAL(pg_get_serial_sequence('EMP_NE_GROUP', 'ne_group_id'))
+	</select>
+
+	<select id="queryNeGroupByName" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne_group.Model4NeGroup">
+		SELECT 
+			ZA.*
+		FROM
+			EMP_NE_GROUP ZA
+		WHERE
+			ZA.delete_state=false
+			AND ZA.parent_ne_group_id=#{parent_ne_group_id}
+			AND ZA.ne_group_name=#{ne_group_name}
+	</select>
+
+	<select id="queryNeGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne_group.Model4NeGroup">
+		SELECT 
+			ZA.*
+		FROM
+			EMP_NE_GROUP ZA
+		WHERE
+			ZA.delete_state=false
+			AND ZA.ne_group_id=#{ne_group_id}
+	</select>
+
+	<select id="queryListNeGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne_group.Model4NeGroup">
+		SELECT 
+			ZA.*
+		FROM
+			EMP_NE_GROUP ZA
+		<if test="user_id != null">
+			INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+			INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+			INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+		WHERE
+			ZA.delete_state=false
+		ORDER BY
+			ZA.left_bound
+		LIMIT #{count} OFFSET #{startNo}
+	</select>
+
+	<select id="queryAllNeGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne_group.Model4NeGroup">
+		SELECT 
+			ZA.*
+		FROM
+			EMP_NE_GROUP ZA
+		WHERE
+			ZA.delete_state=false
+		ORDER BY
+			ZA.left_bound
+	</select>
+
+	<select id="queryCountNeGroup" parameterType="java.util.Map" resultType="int">
+		SELECT
+			COUNT(ZA.ne_group_id)
+		FROM
+			EMP_NE_GROUP ZA
+		<if test="user_id != null">
+			INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+			INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+			INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+		WHERE
+			ZA.delete_state=false
+	</select>
+
+	<update id="updateNeGroup" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne_group.Model4NeGroup">
+		UPDATE 
+			EMP_NE_GROUP
+		SET
+			ne_group_name=#{ne_group_name},
+			description=#{description},
+			ne_group_icon=#{ne_group_icon},
+			admin_state=#{admin_state},
+			meta_data=#{meta_data},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_group_id=#{ne_group_id}
+	</update>
+
+	<update id="updateNeGroupBgImage" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne_group.Model4NeGroup">
+		UPDATE 
+			EMP_NE_GROUP
+		SET
+			ne_group_map_bg_image=#{ne_group_map_bg_image},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_group_id=#{ne_group_id}
+	</update>
+
+	<update id="updateNeGroupMapLocation" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne_group.Model4NeGroup">
+		UPDATE 
+			EMP_NE_GROUP
+		SET
+			ne_group_map_location_x=#{ne_group_map_location_x},
+			ne_group_map_location_y=#{ne_group_map_location_y},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_group_id=#{ne_group_id}
+	</update>
+
+	<update id="shiftLeftBound" parameterType="java.util.Map">
+		UPDATE
+			EMP_NE_GROUP
+		SET
+			left_bound=left_bound + #{offset_bound}
+		WHERE
+			#{left_bound} &lt;= left_bound
+			AND delete_state=false
+	</update>
+
+	<update id="shiftRightBound" parameterType="java.util.Map">
+		UPDATE
+			EMP_NE_GROUP
+		SET
+			right_bound=right_bound + #{offset_bound}
+		WHERE
+			#{right_bound} &lt;= right_bound
+			AND delete_state=false
+	</update>
+
+	<update id="reverseBounds" parameterType="java.util.Map">
+		UPDATE
+			EMP_NE_GROUP
+		SET
+			left_bound= -left_bound,
+			right_bound= -right_bound
+		WHERE
+			ABS(#{left_bound}) &lt;= ABS(left_bound)
+			AND ABS(right_bound) &lt;= ABS(#{right_bound})
+			AND delete_state=false
+	</update>
+
+	<update id="moveReversedBounds" parameterType="java.util.Map">
+		UPDATE
+			EMP_NE_GROUP
+		SET
+			left_bound=-left_bound + #{offset_bound},
+			right_bound=-right_bound + #{offset_bound}
+		WHERE
+			#{left_bound} &lt;= -left_bound
+			AND -right_bound &lt;= #{right_bound}
+			AND delete_state=false
+	</update>
+
+	<update id="moveNeGroup" parameterType="java.util.Map">
+		UPDATE
+			EMP_NE_GROUP
+		SET
+			parent_ne_group_id=#{parent_ne_group_id},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_group_id=#{ne_group_id}
+	</update>
+
+	<update id="deleteNeGroup" parameterType="java.util.Map">
+		UPDATE 
+			EMP_NE_GROUP
+		SET
+			left_bound=0,
+			right_bound=0,
+			delete_state=true,
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND #{left_bound} &lt;= left_bound
+			AND right_bound &lt;= #{right_bound}
+	</update>
+
+	<select id="queryNextUpdate_seq_network" resultType="long">
+		SELECT NEXTVAL('EMP_UPDATE_SEQ_NETWORK')
+	</select>
+
+</mapper>

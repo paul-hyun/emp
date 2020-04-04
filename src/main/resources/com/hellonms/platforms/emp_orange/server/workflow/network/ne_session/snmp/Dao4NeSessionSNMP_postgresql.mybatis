@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.network.ne_session.snmp.Dao4NeSessionSNMPIf">
+
+	<insert id="createNeSession" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne_session.snmp.Model4NeSessionSNMP">
+		INSERT INTO EMP_NE_SESSION_SNMP
+			(
+				delete_state,
+				ne_id,
+				host,
+				address,
+				port,
+				version,
+				read_community,
+				write_community,
+				charset,
+				timeout,
+				retry,
+				session_check_period,
+				description,
+				ne_session_state,
+				ne_session_state_time,
+				response_time,
+				admin_state,
+				meta_data,
+				creator,
+				create_time,
+				updater,
+				update_time
+			)
+			VALUES (
+				false,
+				#{ne_id},
+				#{host},
+				#{address},
+				#{port},
+				#{version},
+				#{read_community},
+				#{write_community},
+				#{charset},
+				#{timeout},
+				#{retry},
+				#{session_check_period},
+				#{description},
+				#{ne_session_state},
+				#{ne_session_state_time},
+				#{response_time},
+				#{admin_state},
+				#{meta_data},
+				#{creator},
+				CURRENT_TIMESTAMP,
+				#{creator},
+				CURRENT_TIMESTAMP
+			)
+	</insert>
+
+	<select id="queryCurrval_ne_id" resultType="int">
+		SELECT CURRVAL(pg_get_serial_sequence('EMP_NE_SESSION_SNMP', 'ne_id'))
+	</select>
+
+	<select id="queryNeSession" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne_session.snmp.Model4NeSessionSNMP">
+		SELECT 
+			A.*
+		FROM
+			EMP_NE_SESSION_SNMP A
+		WHERE
+			A.delete_state=false
+			AND A.ne_id=#{ne_id}
+	</select>
+
+	<select id="queryNeSessionByAddress" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne_session.snmp.Model4NeSessionSNMP">
+		SELECT 
+			A.*
+		FROM
+			EMP_NE_SESSION_SNMP A
+		WHERE
+			A.delete_state=false
+			AND A.address=#{address}
+	</select>
+
+	<select id="queryListNeSession" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne_session.snmp.Model4NeSessionSNMP">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		)
+		SELECT
+			A.*
+		FROM
+			EMP_NE_SESSION_SNMP A
+			INNER JOIN EMP_NE B ON A.ne_id=B.ne_id AND B.delete_state=false
+			INNER JOIN ZZ ON B.ne_group_id=ZZ.ne_group_id
+		WHERE
+			A.delete_state=false
+		ORDER BY
+			A.ne_id
+		LIMIT #{count} OFFSET #{startNo}
+	</select>
+
+	<select id="queryListNeSessionBySchedule" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.network.ne_session.snmp.Model4NeSessionSNMP">
+		SELECT
+			A.*
+		FROM
+			EMP_NE_SESSION_SNMP A
+			INNER JOIN EMP_NE B ON A.ne_id=B.ne_id AND B.delete_state=false AND B.admin_state=true
+		WHERE
+			A.delete_state=false
+			AND MOD(#{second_of_day}, A.session_check_period) = 0
+			AND A.admin_state=true
+		ORDER BY
+			A.ne_id
+	</select>
+
+	<select id="queryCountNeSession" parameterType="java.util.Map" resultType="int">
+		WITH ZZ(ne_group_id) AS (
+			SELECT
+				ZA.ne_group_id
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		)
+		SELECT
+			COUNT(A.ne_id)
+		FROM
+			EMP_NE_SESSION_SNMP A
+			INNER JOIN EMP_NE B ON A.ne_id=B.ne_id AND B.delete_state=false
+			INNER JOIN ZZ ON B.ne_group_id=ZZ.ne_group_id
+		WHERE
+			A.delete_state=false
+	</select>
+
+	<update id="updateNeSession" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne_session.snmp.Model4NeSessionSNMP">
+		UPDATE 
+			EMP_NE_SESSION_SNMP
+		SET
+			host=#{host},
+			address=#{address},
+			port=#{port},
+			version=#{version},
+			read_community=#{read_community},
+			write_community=#{write_community},
+			charset=#{charset},
+			timeout=#{timeout},
+			retry=#{retry},
+			session_check_period=#{session_check_period},
+			description=#{description},
+			admin_state=#{admin_state},
+			meta_data=#{meta_data},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_id=#{ne_id}
+	</update>
+
+	<update id="updateNeSessionState" parameterType="com.hellonms.platforms.emp_orange.share.model.network.ne_session.snmp.Model4NeSessionSNMP">
+		UPDATE 
+			EMP_NE_SESSION_SNMP
+		SET
+			ne_session_state=#{ne_session_state},
+			ne_session_state_time=#{ne_session_state_time},
+			response_time=#{response_time},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_id=#{ne_id}
+	</update>
+
+	<update id="deleteNeSession" parameterType="java.util.Map">
+		UPDATE 
+			EMP_NE_SESSION_SNMP
+		SET
+			delete_state=true,
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND ne_id=#{ne_id}
+	</update>
+
+	<select id="queryNextUpdate_seq_network" resultType="long">
+		SELECT NEXTVAL('EMP_UPDATE_SEQ_NETWORK')
+	</select>
+
+	<delete id="truncate" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_NE_SESSION_SNMP
+		RESTART IDENTITY
+	</delete>
+
+</mapper>

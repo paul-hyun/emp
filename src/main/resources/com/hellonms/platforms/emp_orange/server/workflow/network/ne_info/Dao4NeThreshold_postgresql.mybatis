@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.network.ne_info.Dao4NeThresholdIf">
+
+	<!--							-->
+	<!--		VALUE				-->
+	<!--							-->
+	<insert id="createNeThreshold" parameterType="java.util.Map">
+		INSERT INTO EMP_NE_THRESHOLD
+			VALUES
+		<foreach collection="row_list" item="item" separator=",">
+			(
+				#{item.ne_id},
+				#{item.ne_info_code},
+				#{item.ne_info_value},
+				#{item.creator},
+				#{item.create_time},
+				#{item.creator},
+				#{item.create_time}
+			)
+		</foreach>
+		ON CONFLICT (ne_id, ne_info_code)
+		DO UPDATE SET ne_info_value=EXCLUDED.ne_info_value, updater=EXCLUDED.creator, update_time=EXCLUDED.create_time
+	</insert>
+
+	<select id="queryNeThreshold" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.network.ne_info.Dao4NeThreshold$NeThresholdValue4iBATIS">
+		SELECT
+			A.*
+		FROM
+			EMP_NE_THRESHOLD A
+		WHERE
+			A.ne_id=#{ne_id}
+			AND A.ne_info_code=#{ne_info_code}
+	</select>
+
+	<delete id="truncate" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_NE_THRESHOLD
+		RESTART IDENTITY
+	</delete>
+
+</mapper>

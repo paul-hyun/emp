@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.security.operation_log.Dao4OperationLogIf">
+
+	<insert id="createOperationLog" parameterType="java.util.Map">
+		INSERT INTO EMP_OPERATION_LOG_${partition_index}
+			(
+				transaction_id,
+				user_id,
+				user_account,
+				user_session_id,
+				user_ip,
+				ne_id,
+				ne_group_id,
+				operation_code,
+				result,
+				fail_cause,
+				start_time,
+				end_time,
+				description
+			)
+			VALUES (
+				#{model.transaction_id},
+				#{model.user_id},
+				#{model.user_account},
+				#{model.user_session_id},
+				#{model.user_ip},
+				#{model.ne_id},
+				#{model.ne_group_id},
+				#{model.operation_code},
+				#{model.result},
+				#{model.fail_cause},
+				#{model.start_time},
+				#{model.end_time},
+				#{model.description}
+			)
+	</insert>
+
+	<select id="queryListOperationLogByNeGroup" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.operation_log.Model4OperationLog">
+		WITH ZZ(ne_group_id, ne_group_name) AS (
+		<if test="ne_group_id == 1">
+			SELECT 0, 'Network'
+			UNION
+		</if>
+			SELECT
+				ZA.ne_group_id, ZA.ne_group_name
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		)
+		SELECT
+				A.*
+			FROM
+				EMP_OPERATION_LOG A
+				INNER JOIN ZZ ON A.ne_group_id=ZZ.ne_group_id
+			 WHERE
+				#{fromTime}&lt;A.end_time
+				AND A.start_time&lt;#{toTime}
+			<if test="operation_codes != null">
+				AND operation_code IN (<foreach collection="operation_codes" item="operation_code" separator=",">#{operation_code}</foreach>)
+			</if>
+			<if test="result != null">
+				AND A.result=#{result}
+			</if>
+			<if test="user_session_id != null">
+				AND A.user_session_id=#{user_session_id}
+			</if>
+			<if test="user_account != null">
+				AND A.user_account LIKE '%${user_account}%'
+			</if>
+			ORDER BY A.start_time DESC
+			LIMIT #{count} OFFSET #{startNo}
+	</select>
+
+	<select id="queryListOperationLogByNe" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.operation_log.Model4OperationLog">
+		SELECT
+				A.*
+			FROM
+				EMP_OPERATION_LOG A
+			WHERE
+				#{fromTime}&lt;A.end_time
+				AND A.start_time&lt;#{toTime}
+				AND A.ne_id=#{ne_id}
+			<if test="operation_codes != null">
+				AND operation_code IN (<foreach collection="operation_codes" item="operation_code" separator=",">#{operation_code}</foreach>)
+			</if>
+			<if test="result != null">
+				AND A.result=#{result}
+			</if>
+			<if test="user_session_id != null">
+				AND A.user_session_id=#{user_session_id}
+			</if>
+			<if test="user_account != null">
+				AND A.user_account LIKE '%${user_account}%'
+			</if>
+			ORDER BY A.start_time DESC
+			LIMIT #{count} OFFSET #{startNo}
+	</select>
+
+	<select id="queryCountOperationLogByNeGroup" parameterType="java.util.Map" resultType="int">
+		WITH ZZ(ne_group_id, ne_group_name) AS (
+		<if test="ne_group_id == 1">
+			SELECT 0, 'Network'
+			UNION
+		</if>
+			SELECT
+				ZA.ne_group_id, ZA.ne_group_name
+			FROM
+				EMP_NE_GROUP ZA
+		<if test="user_id != null">
+				INNER JOIN EMP_NE_GROUP ZB ON ZA.left_bound BETWEEN ZB.left_bound AND ZB.right_bound
+				INNER JOIN EMP_USER_MANAGE_NE_GROUP ZC ON ZC.user_id=#{user_id} AND ZB.ne_group_id=ZC.ne_group_id
+		</if>
+		<if test="ne_group_id != null">
+				INNER JOIN EMP_NE_GROUP ZD ON ZA.left_bound BETWEEN ZD.left_bound AND ZD.right_bound AND ZD.ne_group_id=#{ne_group_id}
+		</if>
+			WHERE
+				ZA.delete_state=false
+		)
+		SELECT
+				COUNT(A.transaction_id)
+			FROM
+				EMP_OPERATION_LOG A
+				INNER JOIN ZZ ON A.ne_group_id=ZZ.ne_group_id
+			WHERE
+				#{fromTime}&lt;A.end_time
+				AND A.start_time&lt;#{toTime}
+			<if test="operation_codes != null">
+				AND operation_code IN (<foreach collection="operation_codes" item="operation_code" separator=",">#{operation_code}</foreach>)
+			</if>
+			<if test="result != null">
+				AND A.result=#{result}
+			</if>
+			<if test="user_session_id != null">
+				AND A.user_session_id=#{user_session_id}
+			</if>
+			<if test="user_account != null">
+				AND A.user_account LIKE '%${user_account}%'
+			</if>
+	</select>
+
+	<select id="queryCountOperationLogByNe" parameterType="java.util.Map" resultType="int">
+		SELECT
+				COUNT(A.transaction_id)
+			FROM
+				EMP_OPERATION_LOG A
+			WHERE
+				#{fromTime}&lt;A.end_time
+				AND A.start_time&lt;#{toTime}
+				AND A.ne_id=#{ne_id}
+			<if test="operation_codes != null">
+				AND operation_code IN (<foreach collection="operation_codes" item="operation_code" separator=",">#{operation_code}</foreach>)
+			</if>
+			<if test="result != null">
+				AND A.result=#{result}
+			</if>
+			<if test="user_session_id != null">
+				AND A.user_session_id=#{user_session_id}
+			</if>
+			<if test="user_account != null">
+				AND A.user_account LIKE '%${user_account}%'
+			</if>
+	</select>
+
+	<select id="queryNe_group_id" parameterType="java.util.Map" resultType="int">
+		SELECT
+				A.ne_group_id
+			FROM
+				EMP_NE A
+			WHERE
+				A.ne_id=#{ne_id}
+				AND A.delete_state=false
+	</select>
+
+	<select id="queryListPartition" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT
+			SUBSTRING(UPPER(child.relname) FROM CHAR_LENGTH('EMP_OPERATION_LOG') + 2)
+		FROM
+			pg_inherits
+			JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
+			JOIN pg_class child ON pg_inherits.inhrelid = child.oid
+		WHERE
+			UPPER(parent.relname)=UPPER('EMP_OPERATION_LOG')
+	</select>
+
+	<insert id="createPartition" parameterType="java.util.Map">
+		CREATE TABLE EMP_OPERATION_LOG_${partition_index} (CHECK ('${fromTime}' &lt;= start_time AND start_time &lt; '${toTime}')) INHERITS (EMP_OPERATION_LOG);
+		CREATE INDEX ik_operation_log_${partition_index} ON EMP_OPERATION_LOG_${partition_index} (transaction_id, user_id, user_session_id, ne_id, ne_group_id, operation_code, start_time, end_time, result);
+	</insert>
+
+	<insert id="dropPartition" parameterType="java.util.Map">
+		DROP TABLE EMP_OPERATION_LOG_${partition_index} CASCADE
+	</insert>
+
+	<delete id="truncate" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_OPERATION_LOG
+		RESTART IDENTITY
+	</delete>
+
+</mapper>

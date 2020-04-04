@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.security.user_session.Dao4UserSessionIf">
+
+	<insert id="createUserSession" parameterType="com.hellonms.platforms.emp_orange.share.model.security.user_session.Model4UserSession">
+		INSERT INTO EMP_USER_SESSION
+			(
+				user_session_key,
+				user_id,
+				user_ip,
+				login_time,
+				last_access_time,
+				meta_data,
+				creator,
+				create_time,
+				updater,
+				update_time
+			)
+			VALUES (
+				#{user_session_key},
+				#{user_id},
+				#{user_ip},
+				CURRENT_TIMESTAMP,
+				CURRENT_TIMESTAMP,
+				#{meta_data},
+				#{creator},
+				CURRENT_TIMESTAMP,
+				#{creator},
+				CURRENT_TIMESTAMP
+			)
+	</insert>
+
+	<select id="queryCurrval_user_session_id" resultType="int">
+		SELECT CURRVAL(pg_get_serial_sequence('EMP_USER_SESSION', 'user_session_id'))
+	</select>
+
+	<select id="queryUserSession" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.user_session.Model4UserSession">
+		SELECT 
+			A.*, B.user_account, B.user_name, C.user_group_id, C.user_group_account
+		FROM
+			EMP_USER_SESSION A
+			INNER JOIN EMP_USER B ON A.user_id=B.user_id
+			INNER JOIN EMP_USER_GROUP C ON B.user_group_id=C.user_group_id
+		WHERE
+			A.user_session_key=#{user_session_key}
+	</select>
+
+	<select id="queryListUserSessionByAccount" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.user_session.Model4UserSession">
+		SELECT 
+			A.*, B.user_account, B.user_name, C.user_group_id, C.user_group_account
+		FROM
+			EMP_USER_SESSION A
+			INNER JOIN EMP_USER B ON A.user_id=B.user_id
+			INNER JOIN EMP_USER_GROUP C ON B.user_group_id=C.user_group_id
+		WHERE
+			A.user_account=#{user_account}
+	</select>
+
+	<select id="queryListUserSessionByInterval" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.user_session.Model4UserSession">
+		SELECT 
+			A.*, B.user_account, B.user_name, C.user_group_id, C.user_group_account
+		FROM
+			EMP_USER_SESSION A
+			INNER JOIN EMP_USER B ON A.user_id=B.user_id
+			INNER JOIN EMP_USER_GROUP C ON B.user_group_id=C.user_group_id
+		WHERE
+			#{interval_seconds} &lt; EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - A.last_access_time))
+	</select>
+
+	<update id="updateUserSession_last_access_time" parameterType="java.util.Map">
+		UPDATE EMP_USER_SESSION
+		SET
+			last_access_time=CURRENT_TIMESTAMP
+		WHERE
+			user_session_key=#{user_session_key}
+	</update>
+
+	<delete id="deleteUserSession" parameterType="java.util.Map">
+		DELETE FROM
+			EMP_USER_SESSION
+		WHERE
+			user_session_key=#{user_session_key}
+	</delete>
+
+	<!--							-->
+	<!--	USER_GROUP_AUTHORITY	-->
+	<!--							-->
+	<select id="queryListOperationAuthorities" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.security.user_group.Dao4UserGroup$OperationAuthority">
+		SELECT
+			*
+		FROM
+			EMP_USER_GROUP_AUTHORITY
+		WHERE
+			user_group_id=#{user_group_id}
+	</select>
+
+</mapper>

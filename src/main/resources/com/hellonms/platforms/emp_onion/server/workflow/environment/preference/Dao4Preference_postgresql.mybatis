@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_onion.server.workflow.environment.preference.Dao4PreferenceIf">
+
+	<select id="queryPreference" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_onion.share.model.environment.preference.Model4Preference">
+		SELECT 
+			A.*
+		FROM
+			EMP_PREFERENCE A
+		WHERE
+			A.preference_code=#{preference_code}
+	</select>
+
+	<select id="queryListPreference" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_onion.share.model.environment.preference.Model4Preference">
+		SELECT 
+			A.*
+		FROM
+			EMP_PREFERENCE A
+		<where>
+			<if test="preference_codes != null">
+				AND preference_code IN (<foreach collection="preference_codes" item="preference_code" separator=",">#{preference_code}</foreach>)
+			</if>
+		</where>
+		ORDER BY
+			A.preference_code
+	</select>
+
+	<update id="updatePreference" parameterType="com.hellonms.platforms.emp_onion.share.model.environment.preference.Model4Preference">
+		UPDATE 
+			EMP_PREFERENCE
+		SET
+			preference=#{preference},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			preference_code=#{preference_code}
+	</update>
+
+</mapper>

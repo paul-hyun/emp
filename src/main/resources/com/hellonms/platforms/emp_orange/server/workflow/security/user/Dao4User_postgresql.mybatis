@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.security.user.Dao4UserIf">
+
+	<insert id="createUser" parameterType="com.hellonms.platforms.emp_orange.share.model.security.user.Model4User">
+		INSERT INTO EMP_USER
+			(
+				delete_state,
+				user_group_id,
+				user_account,
+				password,
+				password_time,
+				access,
+				user_name,
+				user_email,
+				telephone,
+				mobilephone,
+				alarm_email_state,
+				alarm_sms_state,
+				description,
+				admin_state,
+				meta_data,
+				creator,
+				create_time,
+				updater,
+				update_time
+			)
+			VALUES (
+				false,
+				#{user_group_id},
+				#{user_account},
+				MD5(#{password}),
+				CURRENT_TIMESTAMP,
+				#{access},
+				#{user_name},
+				#{user_email},
+				#{telephone},
+				#{mobilephone},
+				#{alarm_email_state},
+				#{alarm_sms_state},
+				#{description},
+				#{admin_state},
+				#{meta_data},
+				#{creator},
+				CURRENT_TIMESTAMP,
+				#{creator},
+				CURRENT_TIMESTAMP
+			)
+	</insert>
+
+	<select id="queryCurrval_user_id" resultType="int">
+		SELECT CURRVAL(pg_get_serial_sequence('EMP_USER', 'user_id'))
+	</select>
+
+	<select id="queryUserByAccount" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.user.Model4User">
+		SELECT 
+			A.*, B.user_group_account
+		FROM
+			EMP_USER A
+			INNER JOIN EMP_USER_GROUP B ON A.user_group_id=B.user_group_id
+		WHERE
+			A.delete_state=false
+			AND A.user_account=#{user_account}
+	</select>
+
+	<select id="queryUser" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.user.Model4User">
+		SELECT 
+			A.*, B.user_group_account
+		FROM
+			EMP_USER A
+			INNER JOIN EMP_USER_GROUP B ON A.user_group_id=B.user_group_id
+		WHERE
+			A.delete_state=false
+			AND A.user_id=#{user_id}
+	</select>
+
+	<select id="queryListUser" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.share.model.security.user.Model4User">
+		SELECT 
+			A.*, B.user_group_account
+		FROM
+			EMP_USER A
+			INNER JOIN EMP_USER_GROUP B ON A.user_group_id=B.user_group_id
+		WHERE
+			A.delete_state=false
+		ORDER BY
+			A.user_id
+		LIMIT #{count} OFFSET #{startNo}
+	</select>
+
+	<select id="equalPassword" parameterType="java.util.Map" resultType="boolean">
+		SELECT
+				password=MD5(#{password}) AS pass
+			FROM
+				EMP_USER
+			WHERE
+				delete_state=false
+				AND user_id=#{user_id}
+	</select>
+
+	<select id="queryCountUser" parameterType="java.util.Map" resultType="int">
+		SELECT 
+			COUNT(A.user_id)
+		FROM
+			EMP_USER A
+		WHERE
+			A.delete_state=false
+	</select>
+
+	<update id="updateUser" parameterType="com.hellonms.platforms.emp_orange.share.model.security.user.Model4User">
+		UPDATE 
+			EMP_USER
+		SET
+			user_group_id=#{user_group_id},
+			user_account=#{user_account},
+		<if test="password != null and password != ''">
+			password=MD5(#{password}),
+			password_time=CURRENT_TIMESTAMP,
+		</if>
+			access=#{access},
+			user_name=#{user_name},
+			user_email=#{user_email},
+			telephone=#{telephone},
+			mobilephone=#{mobilephone},
+			alarm_email_state=#{alarm_email_state},
+			alarm_sms_state=#{alarm_sms_state},
+			description=#{description},
+			admin_state=#{admin_state},
+			meta_data=#{meta_data},
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND user_id=#{user_id}
+	</update>
+
+	<update id="deleteUser" parameterType="java.util.Map">
+		UPDATE 
+			EMP_USER
+		SET
+			delete_state=true,
+			updater=#{updater},
+			update_time=CURRENT_TIMESTAMP
+		WHERE
+			delete_state=false
+			AND user_id=#{user_id}
+	</update>
+
+	<!--							-->
+	<!--	USER_MANGE_NE_GROUP		-->
+	<!--							-->
+	<insert id="createListManageNeGroup" parameterType="java.util.Map">
+		INSERT INTO EMP_USER_MANAGE_NE_GROUP
+			(
+				user_id,
+				ne_group_id
+			)
+			VALUES
+		<foreach collection="manage_ne_groups" item="ne_group_id" separator=" , ">
+			(
+				#{user_id},
+				#{ne_group_id}
+			)
+		</foreach>
+	</insert>
+
+	<select id="queryListManageNeGroup" parameterType="java.util.Map" resultType="int">
+		SELECT
+			ne_group_id
+		FROM
+			EMP_USER_MANAGE_NE_GROUP
+		WHERE
+			user_id=#{user_id}
+	</select>
+
+	<delete id="deleteListManageNeGroup" parameterType="java.util.Map">
+		DELETE
+		FROM
+			EMP_USER_MANAGE_NE_GROUP
+		WHERE
+			user_id=#{user_id}
+	</delete>
+
+</mapper>

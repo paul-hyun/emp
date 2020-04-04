@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hellonms.platforms.emp_orange.server.workflow.network.ne_info.Dao4NeStatisticsIf">
+
+	<!--							-->
+	<!--		SYNC				-->
+	<!--							-->
+	<insert id="createListNeStatisticsSync" parameterType="java.util.Map">
+		INSERT INTO EMP_NE_STATISTICS_SYNC
+			VALUES
+		<foreach collection="collect_times" item="item" separator=",">
+			(
+				#{statistics_type},
+				#{ne_info_code},
+				#{item}
+			)
+		</foreach>
+		ON CONFLICT (statistics_type, ne_info_code, collect_time)
+		DO NOTHING
+	</insert>
+
+	<select id="queryListNeStatisticsSync" parameterType="java.util.Map" resultType="java.util.Date">
+		SELECT
+			collect_time
+		FROM
+			EMP_NE_STATISTICS_SYNC
+		WHERE
+			statistics_type=#{statistics_type}
+			AND ne_info_code=#{ne_info_code}
+			AND collect_time &lt;= #{collect_time}
+	</select>
+
+	<delete id="deleteNeStatisticsSync" parameterType="java.util.Map">
+		DELETE FROM
+			EMP_NE_STATISTICS_SYNC
+		WHERE
+			statistics_type=#{statistics_type}
+			AND ne_info_code=#{ne_info_code}
+			AND collect_time=#{collect_time}
+	</delete>
+
+	<delete id="truncateSync" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_NE_STATISTICS_SYNC
+		RESTART IDENTITY
+	</delete>
+
+	<!--							-->
+	<!--		VALUE				-->
+	<!--							-->
+	<insert id="createListNeStatistics" parameterType="java.util.Map">
+		INSERT INTO EMP_NE_STATISTICS_${partition_type}_${partition_index}
+			VALUES
+		<foreach collection="row_list" item="item" separator=",">
+			(
+				#{item.ne_id},
+				#{item.ne_info_code},
+				#{item.ne_info_index},
+				#{item.collect_time},
+				#{item.rop_num},
+				#{item.ne_info_value}
+			)
+		</foreach>
+		ON CONFLICT (ne_id, ne_info_code, ne_info_index, collect_time)
+		DO UPDATE SET rop_num=EXCLUDED.rop_num, ne_info_value=EXCLUDED.ne_info_value
+	</insert>
+
+	<select id="queryListNeStatisticsIndex" parameterType="java.util.Map" resultType="int">
+		SELECT
+			DISTINCT B.ne_info_index
+		FROM
+			EMP_NE_STATISTICS_${partition_type} B
+		WHERE
+			B.ne_id=#{ne_id}
+			AND B.ne_info_code=#{ne_info_code}
+			AND B.collect_time BETWEEN #{fromTime} AND #{toTime}
+		ORDER BY
+			B.ne_info_index
+	</select>
+
+	<select id="queryListNeStatistics" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.network.ne_info.Dao4NeStatistics$NeStatisticsValue4iBATIS">
+		SELECT
+			A.*
+		FROM
+			EMP_NE_STATISTICS_${partition_type} A
+		<where>
+			<if test="ne_id != null">
+				A.ne_id=#{ne_id}
+			</if>
+			<if test="ne_info_code != null">
+				AND A.ne_info_code=#{ne_info_code}
+			</if>
+			<if test="ne_info_index != null">
+				AND A.ne_info_index=#{ne_info_index}
+			</if>
+			<if test="fromTime != null and toTime != null">
+				AND A.collect_time BETWEEN #{fromTime} AND #{toTime}
+			</if>
+			<if test="collect_time != null">
+				AND A.collect_time=#{collect_time}
+			</if>
+		</where>
+		ORDER BY
+			A.collect_time,
+			A.ne_id,
+			A.ne_info_code,
+			A.ne_info_index
+	</select>
+
+	<select id="queryListNeStatisticsByPartition" parameterType="java.util.Map" resultType="com.hellonms.platforms.emp_orange.server.workflow.network.ne_info.Dao4NeStatistics$NeStatisticsValue4iBATIS">
+		SELECT
+			A.*
+		FROM
+			EMP_NE_STATISTICS_${partition_type}_${partition_index} A
+		<where>
+			<if test="ne_id != null">
+				A.ne_id=#{ne_id}
+			</if>
+			<if test="ne_info_code != null">
+				AND A.ne_info_code=#{ne_info_code}
+			</if>
+			<if test="ne_info_index != null">
+				AND A.ne_info_index=#{ne_info_index}
+			</if>
+			<if test="fromTime != null and toTime != null">
+				AND A.collect_time BETWEEN #{fromTime} AND #{toTime}
+			</if>
+			<if test="collect_time != null">
+				AND A.collect_time=#{collect_time}
+			</if>
+		</where>
+		ORDER BY
+			A.collect_time,
+			A.ne_id,
+			A.ne_info_code,
+			A.ne_info_index
+	</select>
+
+	<select id="queryListPartition" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT
+			SUBSTRING(UPPER(child.relname) FROM CHAR_LENGTH('EMP_NE_STATISTICS_${partition_type}') + 2)
+		FROM
+			pg_inherits
+			JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
+			JOIN pg_class child ON pg_inherits.inhrelid = child.oid
+		WHERE
+			UPPER(parent.relname)=UPPER('EMP_NE_STATISTICS_${partition_type}')
+	</select>
+
+	<insert id="createPartition" parameterType="java.util.Map">
+		CREATE TABLE EMP_NE_STATISTICS_${partition_type}_${partition_index} (CHECK ('${fromTime}' &lt;= collect_time AND collect_time &lt; '${toTime}')) INHERITS (EMP_NE_STATISTICS_${partition_type});
+		CREATE UNIQUE INDEX uk_ne_statistics_${partition_type}_${partition_index} ON EMP_NE_STATISTICS_${partition_type}_${partition_index} (ne_id, ne_info_code, ne_info_index, collect_time);
+	</insert>
+
+	<insert id="dropPartition" parameterType="java.util.Map">
+		DROP TABLE EMP_NE_STATISTICS_${partition_type}_${partition_index} CASCADE
+	</insert>
+
+	<delete id="truncate" parameterType="java.util.Map">
+		TRUNCATE
+			EMP_NE_STATISTICS_${partition_type}
+		RESTART IDENTITY
+	</delete>
+
+	<!--							-->
+	<!--	NE_INFO_INDEX			-->
+	<!--							-->
+	<insert id="createNeInfoIndex" parameterType="java.util.Map">
+		INSERT INTO EMP_NE_INFO_INDEX
+			(
+				ne_info_code,
+				ne_field_value_0,
+				ne_field_value_1,
+				ne_field_value_2,
+				ne_field_value_3
+			)
+			VALUES
+			(
+				#{ne_info_code},
+				#{ne_field_value_0},
+				#{ne_field_value_1},
+				#{ne_field_value_2},
+				#{ne_field_value_3}
+			)
+	</insert>
+
+	<select id="queryNeInfoIndex" parameterType="java.util.Map" resultType="int">
+		SELECT
+			ne_info_index
+		FROM
+			EMP_NE_INFO_INDEX
+		WHERE
+			ne_info_code=#{ne_info_code}
+			AND ne_field_value_0=#{ne_field_value_0}
+			AND ne_field_value_1=#{ne_field_value_1}
+			AND ne_field_value_2=#{ne_field_value_2}
+			AND ne_field_value_3=#{ne_field_value_3}
+	</select>
+
+</mapper>
