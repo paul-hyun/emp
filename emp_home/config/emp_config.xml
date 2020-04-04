@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<root>
+	<emp_model>emp_model.data</emp_model>
+	<mybatis_config>mybatis_postgresql.xml</mybatis_config>
+	<wflow_initialize>com.hellonms.platforms.emp_orange.server.workflow.WorkflowInit4Orange</wflow_initialize>
+	<quartz_properties>quartz.properties</quartz_properties>
+	<quartz_config>quartz_schedule.xml</quartz_config>
+	<develop_mode>true</develop_mode>
+</root>

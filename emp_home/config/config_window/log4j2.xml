@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration monitorInterval="300">
+	<properties>
+		<property name="EMP_LOG_HOME">log</property>
+		<property name="TRANSACTION_LOG_HOME">transaction</property>
+		<property name="PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} | %-32.32t | %-64.64C:%-5.5L | %msg%n</property>
+	</properties>
+	<appenders>
+		<Console name="consloe" target="SYSTEM_OUT">
+			<PatternLayout pattern="${PATTERN}" />
+		</Console>
+		<RollingFile name="file_other" fileName="${EMP_LOG_HOME}/other.log" filePattern="${EMP_LOG_HOME}/$${date:yyyy-MM}/other-%d{yyyyMMdd}-%i.log">
+			<PatternLayout>
+				<pattern>${PATTERN}</pattern>
+			</PatternLayout>
+			<Policies>
+				<SizeBasedTriggeringPolicy size="32 MB" /><!-- Rotated every 32M -->
+				<TimeBasedTriggeringPolicy interval="1" /><!-- Rotated every day -->
+			</Policies>
+		</RollingFile>
+		<RollingFile name="file_emp" fileName="${EMP_LOG_HOME}/emp.log" filePattern="${EMP_LOG_HOME}/$${date:yyyy-MM}/emp-%d{yyyyMMdd}-%i.log">
+			<PatternLayout>
+				<pattern>${PATTERN}</pattern>
+			</PatternLayout>
+			<Policies>
+				<SizeBasedTriggeringPolicy size="32 MB" /><!-- Rotated every 32M -->
+				<TimeBasedTriggeringPolicy interval="1" /><!-- Rotated every day -->
+			</Policies>
+			<DefaultRolloverStrategy max="64"/>
+		</RollingFile>
+		<File name="file_transaction" fileName="${TRANSACTION_LOG_HOME}/${date:yyyy-MM}/emp_transaction-${date:yyyyMMdd}.log">
+			<PatternLayout>
+				<pattern>%msg%n</pattern>
+			</PatternLayout>
+		</File>
+	</appenders>
+	<loggers>
+		<Logger name="com.hellonms" level="info" additivity="false">
+			<appender-ref ref="file_emp" />
+		</Logger>
+		<Logger name="com.hellonms.platforms.emp_core.server.transaction.UtilTransaction" level="info" additivity="false">
+			<appender-ref ref="file_transaction" />
+		</Logger>
+		<root level="info">
+			<appender-ref ref="file_other" />
+		</root>
+	</loggers>
+</Configuration>

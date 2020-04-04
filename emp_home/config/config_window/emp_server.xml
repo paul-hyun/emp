@@ -1,0 +1,13 @@
+<emp_start>
+	<http>
+		<port>20080</port>
+	</http>
+	<context>
+		<path>/</path>
+		<war>./EMP_ORANGE</war>
+	</context>
+	<context>
+		<path>/help</path>
+		<war>./help</war>
+	</context>
+</emp_start>

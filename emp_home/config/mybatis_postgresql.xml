@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE configuration
+    PUBLIC "-//mybatis.org//DTD Config 3.0//EN"      
+    "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+
+	<typeHandlers>
+		<typeHandler javaType="com.hellonms.platforms.emp_onion.share.model.ACCESS" handler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+		<typeHandler javaType="com.hellonms.platforms.emp_onion.share.model.environment.preference.PREFERENCE_CODE" handler="com.hellonms.platforms.emp_onion.server.workflow.environment.preference.TypeHandler4PREFERENCE_CODE"/>
+		<typeHandler javaType="com.hellonms.platforms.emp_core.share.operation.OPERATION_CODE" handler="com.hellonms.platforms.emp_orange.server.workflow.security.operation_log.TypeHandler4OPERATION_CODE"/>
+		<typeHandler javaType="com.hellonms.platforms.emp_orange.share.model.emp_model.EMP_MODEL_TYPE" handler="org.apache.ibatis.type.EnumOrdinalTypeHandler" />
+		<typeHandler javaType="com.hellonms.platforms.emp_orange.share.model.fault.event.SEVERITY" handler="org.apache.ibatis.type.EnumOrdinalTypeHandler" />
+		<typeHandler javaType="com.hellonms.platforms.emp_orange.share.model.fault.event.GEN_TYPE" handler="org.apache.ibatis.type.EnumOrdinalTypeHandler" />
+	</typeHandlers>
+
+	<environments default="local">
+		<environment id="local">
+			<transactionManager type="JDBC">
+				<property name="initial_context" value="java:comp/env" />
+				<property name="data_source" value="jdbc/postgresq" />
+			</transactionManager>
+			<dataSource type="POOLED">
+				<property name="driver" value="org.postgresql.Driver" />
+				<property name="url" value="jdbc:postgresql://127.0.0.1:15432/emp_orange" />
+				<property name="username" value="emp_orange" />
+				<property name="password" value="emp_orange" />
+				<property name="poolMaximumActiveConnections" value="64"/>
+				<property name="poolMaximumIdleConnections" value="16"/>
+				<property name="poolMaximumCheckoutTime" value="30000"/>
+				<property name="poolPingEnabled" value="true"/>
+				<property name="poolPingQuery" value="SELECT 1"/>
+				<property name="poolPingConnectionsNotUsedFor" value="10000"/>
+				<property name="poolTimeToWait" value="30000"/>
+			</dataSource>
+		</environment>
+	</environments>
+
+	<mappers>
+		<mapper resource="com/hellonms/platforms/emp_onion/server/workflow/environment/database/Dao4Database_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_onion/server/workflow/environment/preference/Dao4Preference_postgresql.mybatis" />
+
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/network/ne_group/Dao4NeGroup_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/network/ne/Dao4Ne_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/network/ne_session/icmp/Dao4NeSessionICMP_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/network/ne_session/snmp/Dao4NeSessionSNMP_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/network/link/Dao4NetworkLink_postgresql.mybatis" />
+
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/fault/event/Dao4Event_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/fault/event/Dao4Alarm_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/fault/event/Dao4AlarmStatistics_postgresql.mybatis" />
+
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/network/ne_info/Dao4NeInfo_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/network/ne_info/Dao4NeStatistics_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/network/ne_info/Dao4NeThreshold_postgresql.mybatis" />
+
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/security/user_group/Dao4UserGroup_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/security/user/Dao4User_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/security/user_session/Dao4UserSession_postgresql.mybatis" />
+		<mapper resource="com/hellonms/platforms/emp_orange/server/workflow/security/operation_log/Dao4OperationLog_postgresql.mybatis" />
+	</mappers>
+
+</configuration>

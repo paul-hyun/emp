@@ -1,0 +1,67 @@
+<web-app
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+	id="EMP"
+	version="3.0">
+
+	<display-name>EMP Application</display-name>
+
+	<!-- EMP Initialize -->
+	<servlet>
+		<servlet-name>InitializeServlet</servlet-name>
+		<servlet-class>com.hellonms.platforms.emp_start.Servlet4EmpStart</servlet-class>
+		<init-param>
+			<param-name>product_name</param-name>
+			<param-value>eOrange</param-value>
+		</init-param>
+		<load-on-startup>2</load-on-startup>
+	</servlet>
+
+	<!-- UTF-8 -->
+	<filter>
+		<filter-name>CharacterEncodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>CharacterEncodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Spring WEB MVC -->
+	<servlet>
+		<servlet-name>spring-webmvc</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>/WEB-INF/config/*-servlet.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>spring-webmvc</servlet-name>
+		<url-pattern>/invoker/*</url-pattern>
+	</servlet-mapping>
+
+	<!-- COMMON Servlets -->
+	<servlet>
+		<servlet-name>HttpServlet4Image</servlet-name>
+		<servlet-class>com.hellonms.platforms.emp_onion.client_common.servlet.HttpServlet4Image</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>HttpServlet4Image</servlet-name>
+		<url-pattern>/common/image</url-pattern>
+	</servlet-mapping>
+
+	<!-- Default page to serve -->
+	<welcome-file-list>
+		<welcome-file>login.html</welcome-file>
+	</welcome-file-list>
+
+</web-app>
