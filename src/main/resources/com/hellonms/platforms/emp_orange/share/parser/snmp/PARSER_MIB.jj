@@ -1,0 +1,561 @@
+options {
+  STATIC = false;
+}
+
+PARSER_BEGIN(Parser4MIB)
+package com.hellonms.platforms.emp_orange.share.parser.snmp;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
+@SuppressWarnings({ "unused", "serial" })
+public class Parser4MIB {
+}
+
+PARSER_END(Parser4MIB)
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+}
+
+SPECIAL_TOKEN :
+{
+  <SINGLE_LINE_COMMENT: "--" (~["\n","\r"])* ("\n"|"\r"|"\r\n")?>
+}
+
+TOKEN :
+{
+  <L_BRACE:                "{">
+| <R_BRACE:                "}">
+| <L_PAREN:                "(">
+| <R_PAREN:                ")">
+| <L_BRACKET:              "[">
+| <R_BRACKET:              "]">
+| <DOT:                    ".">
+| <COMMA:                  ",">
+| <BAR:                    "|">
+| <SEMI_COLON:             ";">
+}
+
+TOKEN :
+{
+  <DEFINITIONS:            "DEFINITIONS">
+| <BEGIN:                  "BEGIN">
+| <END:                    "END">
+| <DEFINE:                 "::=">
+}
+
+TOKEN :
+{
+  <IMPORTS:                "IMPORTS">
+| <EXPORTS:                "EXPORTS">
+| <FROM:                   "FROM">
+| <IMPLICIT:               "IMPLICIT">
+| <MACRO:                  "MACRO">
+| <TEXTUAL_CONVENTION:     "TEXTUAL-CONVENTION">
+}
+
+TOKEN :
+{
+  <OBJECT_TYPE:            "OBJECT-TYPE">
+| <TRAP_TYPE:              "TRAP-TYPE">
+| <OBJECT_IDENTITY:        "OBJECT-IDENTITY">
+| <OBJECT_GROUP:           "OBJECT-GROUP">
+| <NOTIFICATION_GROUP:     "NOTIFICATION-GROUP">
+| <MODULE_IDENTITY:        "MODULE-IDENTITY">
+| <MODULE_COMPLIANCE:      "MODULE-COMPLIANCE">
+| <AGENT_CAPABILITIES:     "AGENT-CAPABILITIES">
+| <NOTIFICATION_TYPE:      "NOTIFICATION-TYPE">
+}
+
+TOKEN : 
+{
+  <SYNTAX:                 "SYNTAX">
+
+
+| <IMPLIED:                "IMPLIED">
+}
+
+TOKEN : 
+{
+  <OBJECT_IDENTIFIER:      "OBJECT" ([" ","\n","\t","\r"])+ "IDENTIFIER">
+| <CHOICE:                 "CHOICE">
+| <SEQUENCE_OF:            "SEQUENCE" ([" ","\n","\t","\r"])+ "OF">
+| <SEQUENCE:               "SEQUENCE">
+| <OCTET_STRING:           "OCTET" ([" ","\n","\t","\r"])+ "STRING">
+| <INTEGER:                "INTEGER">
+| <BITS:                   "BITS">
+}
+
+TOKEN : 
+{
+  <NUMBER: "0"|("-")?["1"-"9"](["0"-"9"])*>
+| <NUM_16: "'"("-")?(["a"-"f","A"-"F","0"-"9"])*"'"["H","h"]>
+| <NUM_2: "'"("-")?(["a"-"f","A"-"F","0"-"9"])*"'"["B","b"]>
+}
+
+TOKEN : 
+{
+  <USTRING: ["A"-"Z"](("-"["A"-"Z"])|["A"-"Z"])*>
+| <WSTRING: ["a"-"z","A"-"Z"](("-"["a"-"z","A"-"Z","0"-"9"])|["a"-"z","A"-"Z","0"-"9"])*>
+| <CSTRING: "\"" ( ~["\""] )* "\"" >
+}
+
+MIB_MODULE_DEFINITIONS[] mib() : {
+	List<MIB_MODULE_DEFINITIONS> list = new ArrayList<MIB_MODULE_DEFINITIONS>();
+	MIB_MODULE_DEFINITIONS item;
+}
+{
+	(item = moduleDefinitions() { list.add(item); })*
+
+	{ return list.toArray(new MIB_MODULE_DEFINITIONS[0]); }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// DEFINITIONS
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+MIB_MODULE_DEFINITIONS moduleDefinitions() : {
+	MIB_MODULE_DEFINITIONS module_definition = new MIB_MODULE_DEFINITIONS();
+	String string = "";
+	MIB_MODULE_ITEM item = null;
+}
+{
+	(string=aStringValue() { module_definition.setName(string); })
+	<DEFINITIONS>
+	<DEFINE>
+	<BEGIN>
+	((item = moduleItem() { if (item != null) { module_definition.addItem(item); } item = null; }))*
+	<END>
+
+	{ return module_definition; }
+}
+
+MIB_MODULE_ITEM moduleItem() : {
+	MIB_MODULE_ITEM item = null;
+}
+{
+	(
+	  LOOKAHEAD(2) (item=imports())
+	| LOOKAHEAD(2) exports()
+	| LOOKAHEAD(3) (item=objectIdentifier())
+	| LOOKAHEAD(3) (item=textualConvention())
+	| LOOKAHEAD(3) (item=syntaxDefine())
+	| LOOKAHEAD(3) macro()
+	| LOOKAHEAD(3) (item=macroInstanceValid())
+	| LOOKAHEAD(3) (macroInstanceDiscard())
+	)
+	{ return item; }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// IMPORTS
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+MIB_IMPORTS imports() : {
+	MIB_IMPORTS value = new MIB_IMPORTS();
+
+	String string = "";
+}
+{
+	<IMPORTS>
+	(importItem() (<COMMA> importItem())* <FROM> (string=aStringValue() { value.addFrom(string); }))+
+	<SEMI_COLON> 
+	{ return value; }
+}
+
+void exports() : {
+}
+{
+	<EXPORTS>
+	importItem() (<COMMA> importItem())*
+	<SEMI_COLON>
+}
+
+void importItem() : {
+}
+{
+	<TEXTUAL_CONVENTION> | macroTypeValid() | macroTypeDiscard() | <BITS> | aStringValue()
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OBJECT_IDENTIFIER
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+MIB_NODE objectIdentifier() : {
+	MIB_NODE value = new MIB_NODE();
+	value.setValid(true);
+	value.setMacroType(MIB_NODE.MIB_MACRO_TYPE.OBJECT_IDENTIFIER);
+
+	String string = "";
+	MIB_NAME_VALUE[] oid = {};
+}
+{
+	(
+		(string=wStringValue() { value.setName(string); }) <OBJECT_IDENTIFIER> <DEFINE>
+		(oid=oidValue() { value.setOid(oid); })
+	)
+	{ return value; }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TEXTUAL_CONVENTION
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+MIB_SYNTAX syntaxDefine() : {
+	MIB_SYNTAX value = new MIB_SYNTAX();
+
+	String string = "";
+	boolean implicit = false;
+}
+{
+	(
+	string=aStringValue() <DEFINE> [<L_BRACKET> read_BRACKET() <R_BRACKET>] [(<IMPLICIT> { implicit = true; })] value=syntaxType() { value.setNick_name(string); value.setImplicit(implicit); }
+	)
+	{ return value; }
+}
+
+MIB_SYNTAX textualConvention() : {
+	MIB_SYNTAX value = new MIB_SYNTAX();
+
+	String string = "";
+}
+{
+	(
+	string=aStringValue() <DEFINE> <TEXTUAL_CONVENTION> read_SYNTAX() <SYNTAX> value=syntaxType() { value.setNick_name(string); }
+	)
+	{ return value; }
+}
+
+MIB_SYNTAX syntaxType() : {
+	MIB_SYNTAX value = new MIB_SYNTAX();
+
+	String string = "";
+	String[] stringArray = {};
+}
+{
+	(
+		  (<OBJECT_IDENTIFIER> { value.setType("OBJECT IDENTIFIER"); })
+		| LOOKAHEAD(3) (<SEQUENCE_OF> string=wStringValue() { value.setType("SEQUENCE OF"); value.setArg(string); })
+		| (<CHOICE> <L_BRACE> stringArray=read_BRACE() <R_BRACE> { value.setType("CHOICE"); value.setBrace(stringArray); })
+		| (<SEQUENCE> <L_BRACE> stringArray=read_BRACE() <R_BRACE> { value.setType("SEQUENCE"); value.setBrace(stringArray); })
+		| LOOKAHEAD(3) (<OCTET_STRING> <L_PAREN> stringArray=read_PAREN() <R_PAREN> { value.setType("OCTET STRING"); value.setParen(stringArray); })
+		| (<OCTET_STRING> { value.setType("OCTET STRING"); })
+		| LOOKAHEAD(2) (<INTEGER> <L_BRACE> stringArray=read_BRACE() <R_BRACE> { value.setType("INTEGER"); value.setBrace(stringArray); })
+		| LOOKAHEAD(2) (<INTEGER> <L_PAREN> stringArray=read_PAREN() <R_PAREN> { value.setType("INTEGER"); value.setParen(stringArray); })
+		| (<INTEGER> { value.setType("INTEGER"); })
+		| LOOKAHEAD(2) (<BITS> <L_BRACE> stringArray=read_BRACE() <R_BRACE> { value.setType("BITS"); value.setBrace(stringArray); })
+		| LOOKAHEAD(2) (<BITS> <L_PAREN> stringArray=read_PAREN() <R_PAREN> { value.setType("BITS"); value.setParen(stringArray); })
+		| (<BITS> { value.setType("BITS"); })
+		| LOOKAHEAD(2) (string=wStringValue() <L_BRACE> stringArray=read_BRACE() <R_BRACE> { value.setType(string); value.setBrace(stringArray); })
+		| LOOKAHEAD(2) (string=wStringValue() <L_PAREN> stringArray=read_PAREN() <R_PAREN> { value.setType(string); value.setParen(stringArray); })
+		| (string=aStringValue() { value.setType(string); })
+	)
+	{ return value; }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MACRO
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void macro() : {
+}
+{
+	(<TEXTUAL_CONVENTION> | (macroTypeValid() | macroTypeDiscard()))
+	<MACRO> <DEFINE> <BEGIN> read_END() <END>
+}
+
+MIB_NODE.MIB_MACRO_TYPE macroTypeValid() : {
+	MIB_NODE.MIB_MACRO_TYPE value = null;
+}
+{
+	(
+		  (<MODULE_IDENTITY> { value = MIB_NODE.MIB_MACRO_TYPE.MODULE_IDENTITY; })
+		| (<OBJECT_IDENTITY> { value = MIB_NODE.MIB_MACRO_TYPE.OBJECT_IDENTITY; })
+		| (<OBJECT_TYPE> { value = MIB_NODE.MIB_MACRO_TYPE.OBJECT_TYPE; })
+	)
+	{ return value; }
+}
+
+MIB_NODE.MIB_MACRO_TYPE macroTypeDiscard() : {
+	MIB_NODE.MIB_MACRO_TYPE value = null;
+}
+{
+	(
+		  (<MODULE_COMPLIANCE> { value = MIB_NODE.MIB_MACRO_TYPE.MODULE_COMPLIANCE; })
+		| (<OBJECT_GROUP> { value = MIB_NODE.MIB_MACRO_TYPE.OBJECT_GROUP; })
+		| (<TRAP_TYPE> { value = MIB_NODE.MIB_MACRO_TYPE.TRAP_TYPE; })
+		| (<NOTIFICATION_GROUP> { value = MIB_NODE.MIB_MACRO_TYPE.NOTIFICATION_GROUP; })
+		| (<NOTIFICATION_TYPE> { value = MIB_NODE.MIB_MACRO_TYPE.NOTIFICATION_TYPE; })
+		| (<AGENT_CAPABILITIES> { value = MIB_NODE.MIB_MACRO_TYPE.AGENT_CAPABILITIES; })
+	)
+	{ return value; }
+}
+
+MIB_NODE macroInstanceValid() : {
+	MIB_NODE value = new MIB_NODE();
+	value.setValid(true);
+
+	MIB_NODE.MIB_MACRO_TYPE macroType = null;
+	MIB_SYNTAX syntax = null;
+	String string = "";
+	String string2 = "";
+	String[] stringArray = {};
+	MIB_NAME_VALUE[] oid = {};
+}
+{
+	(string=wStringValue() { value.setName(string); })
+	(macroType=macroTypeValid() { value.setMacroType(macroType); })
+	(
+	  (<SYNTAX> syntax=syntaxType() { value.putContents("SYNTAX", syntax); })
+	| LOOKAHEAD(2) (string=uStringValue() string2=wStringValue() { value.putContents(string, string2); })
+	| LOOKAHEAD(2) (string=uStringValue() string2=cStringValue() { value.putContents(string, string2); })
+	| LOOKAHEAD(2) (string=uStringValue() <L_BRACE> stringArray=read_BRACE() <R_BRACE> { value.putContents(string, stringArray); })
+	)+
+	<DEFINE>
+	(
+	  (oid=oidValue() { value.setOid(oid); })
+	)
+	{ return value; }
+}
+
+MIB_NODE macroInstanceDiscard() : {
+	MIB_NODE value = new MIB_NODE();
+	value.setValid(false);
+
+	String string = "";
+	MIB_NODE.MIB_MACRO_TYPE macroType = null;
+	String[] contents = {};
+	MIB_NAME_VALUE[] oid = {};
+}
+{
+	(string=wStringValue() { value.setName(string); })
+	(macroType=macroTypeDiscard() { value.setMacroType(macroType); })
+	(contents=read_DEFINE() { value.setContents(contents); })
+	<DEFINE>
+	(
+	  LOOKAHEAD(3) (oid=oidValue() { value.setOid(oid); })
+	| numberValue()
+	)
+	{ return value; }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VALUE
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+MIB_NAME_VALUE[] oidValue() : {
+	List<MIB_NAME_VALUE> value_list = new ArrayList<MIB_NAME_VALUE>();
+	MIB_NAME_VALUE value = new MIB_NAME_VALUE();
+	String string = "";
+	BigInteger number = BigInteger.valueOf(0);
+}
+{
+	<L_BRACE>
+	(
+	  LOOKAHEAD(3) (value=enumValue() { value_list.add(value); })
+	| (string=wStringValue() { value = new MIB_NAME_VALUE(); value.setName(string); value_list.add(value); })
+	| (number=numberValue() { value = new MIB_NAME_VALUE(); value.setValue(number); value_list.add(value); })
+	)+
+	<R_BRACE>
+	{ return value_list.toArray(new MIB_NAME_VALUE[0]); }
+}
+
+MIB_NAME_VALUE enumValue() : {
+	MIB_NAME_VALUE value = new MIB_NAME_VALUE();
+	String string = "";
+	BigInteger number = BigInteger.valueOf(0);
+}
+{
+	(string=wStringValue() { value.setName(string); }) <L_PAREN> (number=numberValue() { value.setValue(number); }) <R_PAREN>
+	{ return value; }
+}
+
+String aStringValue() : {
+	String string = "";
+}
+{
+	(
+	  (string=uStringValue())
+	| (string=wStringValue())
+	)
+	{ return string; }
+}
+
+String uStringValue() : {
+	String string = "";
+}
+{
+	(token=<USTRING> { string = token.image; })
+	{ return string; }
+}
+
+String wStringValue() : {
+	String string = "";
+}
+{
+	(token=<WSTRING> { string = token.image; })
+	{ return string; }
+}
+
+String cStringValue() : {
+	String string = "";
+}
+{
+	(token=<CSTRING> { string = token.image; })
+	{ return string; }
+}
+
+BigInteger numberValue() : {
+	BigInteger number = BigInteger.valueOf(0);
+}
+{
+	(
+	(token=<NUMBER> { number=new BigInteger(token.image); })
+	| (token=<NUM_16> { number=new BigInteger(token.image.replaceAll("'", "").replaceAll("h","").replaceAll("H",""), 16); })
+	| (token=<NUM_16> { number=new BigInteger(token.image.replaceAll("'", "").replaceAll("h","").replaceAll("H",""), 2); })
+	)
+	{ return number; }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// JAVA CODE
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+JAVACODE
+String[] read_END() {
+	List<String> string_list = new ArrayList<String>();
+	int nesting = 1;
+	Token token;
+	while (true) {
+		token = getToken(1);
+		if (token.kind == END) {
+			nesting--;
+		}
+		if (nesting < 1) {
+			break;
+		}
+		if (token.kind != IMPLIED) {
+			string_list.add(token.image);
+		}
+		token = getNextToken();
+	}
+	return string_list.toArray(new String[0]);
+}
+
+JAVACODE
+String[] read_DEFINE() {
+	List<String> string_list = new ArrayList<String>();
+	int nesting = 1;
+	Token token;
+	while (true) {
+		token = getToken(1);
+		if (token.kind == DEFINE) {
+			nesting--;
+		}
+		if (nesting < 1) {
+			break;
+		}
+		if (token.kind != IMPLIED) {
+			string_list.add(token.image);
+		}
+		token = getNextToken();
+	}
+	return string_list.toArray(new String[0]);
+}
+
+JAVACODE
+String[] read_SYNTAX() {
+	List<String> string_list = new ArrayList<String>();
+	int nesting = 1;
+	Token token;
+	while (true) {
+		token = getToken(1);
+		if (token.kind == SYNTAX) {
+			nesting--;
+		}
+		if (nesting < 1) {
+			break;
+		}
+		if (token.kind != IMPLIED) {
+			string_list.add(token.image);
+		}
+		token = getNextToken();
+	}
+	return string_list.toArray(new String[0]);
+}
+
+JAVACODE
+String[] read_BRACE() {
+	List<String> string_list = new ArrayList<String>();
+	int nesting = 1;
+	Token token;
+	while (true) {
+		token = getToken(1);
+		if (token.kind == L_BRACE) {
+			nesting++;
+		}
+		if (token.kind == R_BRACE) {
+			nesting--;
+		}
+		if (nesting < 1) {
+			break;
+		}
+		if (token.kind != IMPLIED) {
+			string_list.add(token.image);
+		}
+		token = getNextToken();
+	}
+	return string_list.toArray(new String[0]);
+}
+
+JAVACODE
+String[] read_BRACKET() {
+	List<String> string_list = new ArrayList<String>();
+	int nesting = 1;
+	Token token;
+	while (true) {
+		token = getToken(1);
+		if (token.kind == L_BRACKET) {
+			nesting++;
+		}
+		if (token.kind == R_BRACKET) {
+			nesting--;
+		}
+		if (nesting < 1) {
+			break;
+		}
+		if (token.kind != IMPLIED) {
+			string_list.add(token.image);
+		}
+		token = getNextToken();
+	}
+	return string_list.toArray(new String[0]);
+}
+
+JAVACODE
+String[] read_PAREN() {
+	List<String> string_list = new ArrayList<String>();
+	int nesting = 1;
+	Token token;
+	while (true) {
+		token = getToken(1);
+		if (token.kind == L_PAREN) {
+			nesting++;
+		}
+		if (token.kind == R_PAREN) {
+			nesting--;
+		}
+		if (nesting < 1) {
+			break;
+		}
+		if (token.kind != IMPLIED) {
+			string_list.add(token.image);
+		}
+		token = getNextToken();
+	}
+	return string_list.toArray(new String[0]);
+}
+
